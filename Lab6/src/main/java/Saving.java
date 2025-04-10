@@ -14,6 +14,7 @@ public class Saving extends AbstractAccount{
   public Saving() {
     super(5000); // Withdraw here is used as
     this.maxTransfer = 100;
+
     
   }
 
