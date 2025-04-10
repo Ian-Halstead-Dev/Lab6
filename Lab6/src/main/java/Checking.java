@@ -10,7 +10,7 @@
 
 public class Checking extends AbstractAccount {
     public Checking() {
-        super(5000, 500);
+        super(5000);
     }
 
     

@@ -12,7 +12,7 @@ public class Saving extends AbstractAccount{
   int transferToday;
   int maxTransfer;
   public Saving() {
-    super(5000, 0); // Withdraw here is used as 
+    super(5000); // Withdraw here is used as
     this.maxTransfer = 100;
     
   }
