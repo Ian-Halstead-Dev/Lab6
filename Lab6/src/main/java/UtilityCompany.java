@@ -12,7 +12,7 @@ import java.util.*;
 public class UtilityCompany {
 
     //Bad database practice
-    private static Set<User> users = new HashSet<>();
+    static Set<User> users = new HashSet<>();
 
     
     public static void CreateAccount(){
@@ -61,12 +61,12 @@ public class UtilityCompany {
         }
     }
 
-    public String paymentHistory(){
-        return "";
+    public ArrayDeque<Integer> paymentHistory(User u){
+        return u.getPaymentHistoy();
     }
 
-    public String nextPayment(){
-        return "";
+    public String nextPayment(User u){
+        return Integer.toString(u.getNextPayment());
     }
     public static void main(String args[]){
         CreateAccount();
