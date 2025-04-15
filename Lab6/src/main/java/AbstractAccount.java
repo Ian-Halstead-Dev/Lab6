@@ -1,10 +1,10 @@
 public abstract class AbstractAccount {
-    private int balance;
-    private final int maxDeposit;
+    protected int balance;
+    private final int maxDeposit = 5000;
     private int currentDeposit;
 
-    public AbstractAccount (int maxDeposit) {
-      this.maxDeposit = maxDeposit;
+    public AbstractAccount () {
+        balance = 1000;
     }
 
     public void reset() {
@@ -25,4 +25,5 @@ public abstract class AbstractAccount {
     public int getBalance() {
       return balance;
     }
+    public void setBalance(int balance) { this.balance = balance;}
 }

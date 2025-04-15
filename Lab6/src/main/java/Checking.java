@@ -9,8 +9,34 @@
 
 
 public class Checking extends AbstractAccount {
+
+    private int withdrawToday = 0;
+    private int lastWithdrawDay = -1;
     public Checking() {
-        super(5000);
+        super();
+    }
+    public boolean withdraw(int amount) {
+        int today = DayTracker.getCurrentDay();
+
+        // Reset daily tracker if new day
+        if (today != lastWithdrawDay) {
+            withdrawToday = 0;
+            lastWithdrawDay = today;
+        }
+
+        if (withdrawToday + amount > 500) {
+            System.out.println("Daily withdrawal limit reached.");
+            return false;
+        }
+
+        if (amount <= balance) {
+            balance -= amount;
+            withdrawToday += amount;
+            return true;
+        } else {
+            System.out.println("Insufficient balance.");
+            return false;
+        }
     }
 
     
