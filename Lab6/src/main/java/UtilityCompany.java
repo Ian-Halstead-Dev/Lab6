@@ -12,7 +12,7 @@ import java.util.*;
 public class UtilityCompany {
 
     //Bad database practice
-    static Set<User> users = new HashSet<>();
+    static Set<User> users = UserDataStore.loadUsers();
 
     
     public static void CreateAccount(){
@@ -35,7 +35,7 @@ public class UtilityCompany {
         System.out.print("Enter a Password: ");
         user.setPassword(scnr.next());
 
-        user.setAccNum(rand.nextInt(1000000));
+        user.setAccNum(100000 + rand.nextInt(900000));
         System.out.printf("%s's, account number: " , user.getUsername());
         System.out.println(user.getAccNum());
     }

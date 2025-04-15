@@ -7,6 +7,7 @@ public class UtilityCompanyUI extends JFrame {
 
     private static UtilityCompany company = new UtilityCompany();
     private User loggedInUser = null;
+    private Checking userCheckingAccount = new Checking();
 
     public UtilityCompanyUI() {
         setTitle("Utility Company Portal");
@@ -58,7 +59,6 @@ public class UtilityCompanyUI extends JFrame {
             String pass = passwordField.getText();
             Random rand = new Random();
 
-            // Check username uniqueness
             boolean exists = UtilityCompany.users.stream()
                     .anyMatch(u -> u.getUsername().equals(uname));
             if (exists) {
@@ -70,6 +70,8 @@ public class UtilityCompanyUI extends JFrame {
             user.setPassword(pass);
             user.setAccNum(rand.nextInt(1000000));
             UtilityCompany.users.add(user);
+            UserDataStore.saveUsers(UtilityCompany.users);
+
 
             JOptionPane.showMessageDialog(this, "Account created! Your account number: " + user.getAccNum());
             showWelcomeScreen();
@@ -121,7 +123,7 @@ public class UtilityCompanyUI extends JFrame {
 
     private void showAccountScreen() {
         getContentPane().removeAll();
-        setLayout(new GridLayout(4, 1));
+        setLayout(new GridLayout(5, 1));
 
         JButton paymentHistoryBtn = new JButton("View Payment History");
         JButton nextPaymentBtn = new JButton("View Next Payment");
@@ -143,7 +145,16 @@ public class UtilityCompanyUI extends JFrame {
 
         nextPaymentBtn.addActionListener(e -> {
             int nextPayment = loggedInUser.getNextPayment();
-            JOptionPane.showMessageDialog(this, "Next Payment: $" + nextPayment + "\nDue Date: 30 days from now");
+            userCheckingAccount = loggedInUser.getCheckingAcct();
+            int confirm = JOptionPane.showConfirmDialog(this, "Next Payment: $" + nextPayment + "\nDue Date: 30 days from now\n\nDo you want to pay this now?", "Pay Bill", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                boolean success = Payment.payUtilityBill(loggedInUser, userCheckingAccount, company);
+                if (success) {
+                    JOptionPane.showMessageDialog(this, "Bill paid successfully from your checking account.");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Payment failed. Check your account balance or limits.");
+                }
+            }
         });
 
         logoutBtn.addActionListener(e -> {
