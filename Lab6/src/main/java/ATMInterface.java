@@ -12,9 +12,11 @@ public class ATMInterface extends JFrame {
     private Saving saving = new Saving();
     static Set<User> users = UserDataStore.loadUsers();
     private User loggedInUser;
+    private Home home;
 
-    public ATMInterface() {
+    public ATMInterface(Home home) {
         // Frame settings
+        this.home = home;
         setTitle("ATM System");
         setSize(400, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -93,7 +95,13 @@ public class ATMInterface extends JFrame {
         JButton depositButton = new JButton("Deposit");
         JButton balanceButton = new JButton("Check Balance");
         JButton exitButton = new JButton("Exit");
+        JButton homeButton = new JButton("Back to Home");
+        homeButton.addActionListener(e -> {
+            this.dispose();  // Close ATM window
+            home.setVisible(true);  // Show Home window again
+        });
 
+        panel.add(homeButton);
         withdrawButton.addActionListener(e -> cardLayout.show(mainPanel, "withdraw"));
         depositButton.addActionListener(e -> cardLayout.show(mainPanel, "deposit"));
         balanceButton.addActionListener(e -> {
@@ -220,7 +228,8 @@ public class ATMInterface extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            ATMInterface atm = new ATMInterface();
+            Home home = new Home(); // create home screen
+            ATMInterface atm = new ATMInterface(home); // pass it to ATM
             atm.setVisible(true);
         });
     }

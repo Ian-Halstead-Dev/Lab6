@@ -6,29 +6,47 @@ public class UtilityCompanyUI extends JFrame {
     private User loggedInUser = null;
     private Checking userCheckingAccount = new Checking();
     static Set<User> users = UserDataStore.loadUsers();
+    private Home home;
 
-    public UtilityCompanyUI() {
+//    public UtilityCompanyUI(){
+//        this(null);
+//    }
+    public UtilityCompanyUI(Home home) {
         setTitle("Utility Company Portal");
         setSize(400, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-
+        this.home = home;
         showWelcomeScreen();
     }
 
     private void showWelcomeScreen() {
         getContentPane().removeAll();
-        setLayout(new FlowLayout());
+        setLayout(new BorderLayout());
 
+        // Top label
+        JLabel titleLabel = new JLabel("Welcome to the Utility Company", SwingConstants.CENTER);
+        add(titleLabel, BorderLayout.NORTH);
+
+        // Center buttons (Create & Login)
+        JPanel centerPanel = new JPanel(new GridLayout(2, 1, 10, 10));
         JButton createAccountBtn = new JButton("Create Account");
         JButton loginBtn = new JButton("Login");
 
         createAccountBtn.addActionListener(e -> showCreateAccountScreen());
         loginBtn.addActionListener(e -> showLoginScreen());
 
-        add(new JLabel("Welcome to the Utility Company"));
-        add(createAccountBtn);
-        add(loginBtn);
+        centerPanel.add(createAccountBtn);
+        centerPanel.add(loginBtn);
+        add(centerPanel, BorderLayout.CENTER);
+
+        // Bottom "Back to Home" button
+        JButton homeButton = new JButton("Back to Home");
+        homeButton.addActionListener(e -> {
+            this.dispose();  // Close Utility window
+            home.setVisible(true);
+        });
+        add(homeButton, BorderLayout.SOUTH);
 
         revalidate();
         repaint();
@@ -160,6 +178,10 @@ public class UtilityCompanyUI extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new UtilityCompanyUI().setVisible(true));
+        SwingUtilities.invokeLater(() -> {
+            Home home = new Home(); // create the home screen
+            UtilityCompanyUI utilityUI = new UtilityCompanyUI(home); // pass it to Utility
+            utilityUI.setVisible(true);
+        });
     }
 }
