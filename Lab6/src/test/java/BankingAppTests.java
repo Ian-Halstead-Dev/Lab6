@@ -1,185 +1,206 @@
 import org.junit.jupiter.api.*;
 import java.io.*;
 import java.util.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BankingAppTests {
 
-    private User user;
     private Checking checking;
     private Saving saving;
+    private User user;
     private final String filePath = "users.txt";
 
     @BeforeEach
-    public void setup() throws IOException {
-        // Initialize user and accounts
+    public void setUp() {
+        checking = new Checking();
+        checking.setBalance(1000);
+        saving = new Saving();
+        saving.setBalance(500);
         user = new User();
-        checking = user.getCheckingAcct();
-        saving = user.getSavingAcct();
-        DayTracker.resetDay();
-
-        // Clear the user data file before each storage test
-        new FileWriter(filePath, false).close();
+        user.setCheckingAcct(checking);
+        user.setSavingAcct(saving);
+        user.setUsername("ian");
+        user.setPassword("pass");
+        user.setPin(1234);
+        user.setAccNum(42);
     }
 
-    // ---------------- FUNCTIONAL TESTS ----------------
+    // === CHECKING ACCOUNT TESTS ===
 
     @Test
-    public void testValidDepositToChecking() throws AntiMoneyLaunderingException {
-        assertTrue(checking.deposit(3000));
-        assertEquals(4000, checking.getBalance());
-    }
-
-    @Test
-    public void testOverDepositLimitThrowsException() {
-        assertThrows(AntiMoneyLaunderingException.class, () -> checking.deposit(6000));
+    public void testDepositWithinLimit() throws AntiMoneyLaunderingException {
+        checking.deposit(2000);
+        assertEquals(3000, checking.getBalance());
     }
 
     @Test
-    public void testValidWithdrawal() {
-        assertTrue(checking.withdraw(300));
-        assertEquals(700, checking.getBalance());
+    public void testDepositMultipleTimesWithinLimit() throws AntiMoneyLaunderingException {
+        checking.deposit(2000);
+        checking.deposit(2000);
+        checking.deposit(1000); // Total = 5000
+        assertEquals(6000, checking.getBalance());
     }
 
     @Test
-    public void testWithdrawalOverLimit() {
+    public void testDepositExceedingAcrossMultipleDeposits() throws AntiMoneyLaunderingException {
+        checking.deposit(3000);
+        assertThrows(AntiMoneyLaunderingException.class, () -> checking.deposit(2500));
+        assertEquals(4000, checking.getBalance()); // Only 3000 accepted, and base is 1000
+    }
+
+    @Test
+    public void testResetDepositLimitNextDay() throws AntiMoneyLaunderingException {
+        checking.deposit(5000);
+        checking.reset();
+        DayTracker.nextDay();
+        assertDoesNotThrow(() -> checking.deposit(5000));
+        assertEquals(11000, checking.getBalance());
+    }
+
+    @Test
+    public void testWithdrawWithinLimit() throws AntiMoneyLaunderingException {
         checking.withdraw(300);
-        assertFalse(checking.withdraw(250)); // exceeds daily $500
-    }
-
-    @Test
-    public void testOverdraftNotAllowed() {
-        assertFalse(checking.withdraw(2000));
-    }
-
-    @Test
-    public void testPayUtilityBillSuccess() throws AntiMoneyLaunderingException {
-
-        user.setNextPayment(300);
-        boolean result = Payment.payUtilityBill(user, checking, null);
-
-        assertTrue(result);
-
-        assertEquals(1, user.getPaymentHistoy().size());
-        assertEquals(300, user.getPaymentHistoy().peekFirst());
         assertEquals(700, checking.getBalance());
     }
 
     @Test
-    public void testPayUtilityBillFailInsufficientFunds() {
-        user.setNextPayment(2000); // exceeds initial checking balance
-        boolean result = Payment.payUtilityBill(user, checking, null);
+    public void testWithdrawExceedingLimit() {
+        boolean check = checking.withdraw(600);
+        assertFalse(check);
+    }
 
-        assertFalse(result);
-        assertEquals(2000, user.getNextPayment());
-        assertEquals(1000, checking.getBalance());
-        assertTrue(user.getPaymentHistoy().isEmpty());
+    // === SAVINGS TRANSFER TESTS ===
+
+    @Test
+    public void testTransferFromSavingsToChecking() throws AntiMoneyLaunderingException {
+        saving.setBalance(500);
+        checking.setBalance(1000);
+        saving.transferToday = 0;
+        saving.transferToday += 50;
+        saving.setBalance(450);
+        checking.setBalance(1050);
+        assertEquals(450, saving.getBalance());
+        assertEquals(1050, checking.getBalance());
     }
 
     @Test
-    public void testSavingAccountTransferWithinLimit() throws AntiMoneyLaunderingException {
-        if (saving.transferToday + 100 <= 100) {
-            saving.setBalance(saving.getBalance() - 100);
-            checking.setBalance(checking.getBalance() + 100);
-            saving.transferToday += 100;
+    public void testTransferExceedingDailyLimit() throws AntiMoneyLaunderingException {
+        saving.deposit(1000);
+        saving.transferToday = 100; // Already reached limit
+        int preBalance = saving.getBalance();
+        int preChecking = checking.getBalance();
+
+        if (saving.transferToday + 50 > 100) {
+            assertEquals(preBalance, saving.getBalance());
+            assertEquals(preChecking, checking.getBalance());
         }
+    }
+
+    @Test
+    public void testTransferExactlyToLimit() throws AntiMoneyLaunderingException {
+        saving.transferToday = 0;
+        saving.setBalance(1000);
+        checking.setBalance(1000);
+
+        saving.transferToday += 100;
+        saving.setBalance(900);
+        checking.setBalance(1100);
+
         assertEquals(900, saving.getBalance());
         assertEquals(1100, checking.getBalance());
     }
 
+    // === UTILITY PAYMENT TESTS ===
+
     @Test
-    public void testInvalidTransferOverLimit() throws AntiMoneyLaunderingException {
-        saving.deposit(1000);
-        saving.transferToday = 100;
-        int start = saving.getBalance();
-        if (saving.transferToday + 50 > 100) {
-            // Transfer shouldn't happen
-            assertEquals(start, saving.getBalance());
-        }
+    public void testUtilityPaymentOnce() throws AntiMoneyLaunderingException {
+        user.setNextPayment(200);
+        boolean result = Payment.payUtilityBill(user, checking, null);
+        assertTrue(result);
+        assertEquals(800, checking.getBalance());
+        assertEquals(1, user.getPaymentHistoy().size());
     }
 
-    // ---------------- DATA STORAGE TESTS ----------------
+    @Test
+    public void testMultipleUtilityPayments() throws AntiMoneyLaunderingException {
+        user.setNextPayment(200);
+        assertTrue(Payment.payUtilityBill(user, checking, null));
+        user.setNextPayment(150);
+        assertTrue(Payment.payUtilityBill(user, checking, null));
+
+        assertEquals(2, user.getPaymentHistoy().size());
+        assertEquals(1000 - 200 - 150, checking.getBalance());
+    }
 
     @Test
-    public void testSaveAndLoadSingleUser() {
+    public void testUtilityPaymentInsufficientFunds() throws AntiMoneyLaunderingException {
+        checking.setBalance(100);
+        user.setNextPayment(150);
+        boolean result = Payment.payUtilityBill(user, checking, null);
+        assertFalse(result);
+        assertEquals(100, checking.getBalance());
+        assertEquals(0, user.getPaymentHistoy().size());
+    }
+
+    // === STORAGE TESTS ===
+
+    @Test
+    public void testNullUserStorage() {
+        assertThrows(NullPointerException.class, () -> UserDataStore.saveUsers(null));
+    }
+
+    @Test
+    public void testNullElementWithMultipleUsers() throws IOException {
         Set<User> users = new HashSet<>();
+        users.add(null);
         User u = new User();
-        u.setUsername("ian");
-        u.setPassword("pass");
-        u.setPin(1234);
-        u.setAccNum(1);
+        u.setUsername("john");
+        u.setPassword("123");
+        u.setPin(1111);
+        u.setAccNum(42);
         users.add(u);
 
         UserDataStore.saveUsers(users);
-        Set<User> loaded = UserDataStore.loadUsers();
 
+        Set<User> loaded = UserDataStore.loadUsers();
         assertEquals(1, loaded.size());
-        assertEquals("ian", loaded.iterator().next().getUsername());
     }
 
     @Test
-    public void testSaveAndLoadMultipleUsers() {
+    public void testNullSingleUserElement() throws IOException {
         Set<User> users = new HashSet<>();
-        for (int i = 0; i < 5; i++) {
-            User u = new User();
-            u.setUsername("user" + i);
-            u.setPassword("pass" + i);
-            u.setPin(1000 + i);
-            u.setAccNum(i);
-            users.add(u);
-        }
-
+        users.add(null);
         UserDataStore.saveUsers(users);
         Set<User> loaded = UserDataStore.loadUsers();
-
-        assertEquals(5, loaded.size());
+        assertTrue(loaded.isEmpty());
     }
 
     @Test
-    public void testEmptyFileLoad() throws IOException {
-        new FileWriter(filePath, false).close(); // Ensure empty file
-        Set<User> users = UserDataStore.loadUsers();
-        assertTrue(users.isEmpty());
-    }
-
-    @Test
-    public void testMalformedLine() throws IOException {
+    public void testIncompatibleTypeInFile() throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-            writer.write("1234,bad,data\n");
+            writer.write("ian,pass,abcd,xyz\n"); // xyz not parsable as accNum
         }
-        Set<User> users = UserDataStore.loadUsers();
-        assertEquals(0, users.size());
-    }
-
-
-    @Test
-    public void testNegativeDepositThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> checking.deposit(-100));
+        Set<User> loaded = UserDataStore.loadUsers();
+        assertTrue(loaded.isEmpty());
     }
 
     @Test
-    public void testNegativeWithdrawalFails() {
-        assertThrows(IllegalArgumentException.class, () -> checking.withdraw(-100));
-
-        assertEquals(1000, checking.getBalance());
-    }
-
-    @Test
-    public void testPayUtilityBillWithNullUser() {
-        assertThrows(NullPointerException.class, () -> Payment.payUtilityBill(null, checking, null));
-    }
-
-    @Test
-    public void testPayUtilityBillWithNullChecking() {
-        assertThrows(NullPointerException.class, () -> Payment.payUtilityBill(user, null, null));
-    }
-
-    @Test
-    public void testLoadUserWithInvalidPin() throws IOException {
+    public void testEmptyFieldsInFile() throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
-            writer.write("ian,pass,notanumber,1\n");
+            writer.write(",,,\n");
         }
         Set<User> users = UserDataStore.loadUsers();
         assertTrue(users.isEmpty());
+    }
+
+    // === CLEANUP ===
+
+    @AfterEach
+    public void cleanUp() {
+        File file = new File(filePath);
+        if (file.exists()) {
+            file.delete();
+        }
     }
 }

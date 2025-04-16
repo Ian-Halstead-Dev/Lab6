@@ -7,6 +7,7 @@ public class UserDataStore {
     public static void saveUsers(Set<User> users) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH))) {
             for (User user : users) {
+                if(user == null) continue;
                 int checkingBalance = user.getCheckingAcct() != null ? user.getCheckingAcct().getBalance() : 0;
                 int savingBalance = user.getSavingAcct() != null ? user.getSavingAcct().getBalance() : 0;
                 writer.write(user.getPin() + "," +
