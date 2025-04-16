@@ -11,7 +11,7 @@ public abstract class AbstractAccount {
       currentDeposit = 0;
     }
 
-    public void deposit(int amount) throws AntiMoneyLaunderingException {
+    public boolean deposit(int amount) throws AntiMoneyLaunderingException {
       if(amount + currentDeposit > maxDeposit) {
         throw new AntiMoneyLaunderingException();
       }
@@ -19,6 +19,7 @@ public abstract class AbstractAccount {
       currentDeposit += amount;
 
       balance += amount;
+      return true;
     }
 
 

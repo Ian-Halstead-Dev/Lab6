@@ -8,11 +8,10 @@ import java.util.Set;
 public class ATMInterface extends JFrame {
     private CardLayout cardLayout;
     private JPanel mainPanel;
-
-    private double balance = 1000.00; // Example balance
     private Checking checking = new Checking();
     private Saving saving = new Saving();
     static Set<User> users = UserDataStore.loadUsers();
+    private User loggedInUser;
 
     public ATMInterface() {
         // Frame settings
@@ -31,7 +30,7 @@ public class ATMInterface extends JFrame {
         mainPanel.add(createMenuPanel(), "menu");
         mainPanel.add(createWithdrawPanel(), "withdraw");
         mainPanel.add(createDepositPanel(), "deposit");
-        mainPanel.add(createBalancePanel(), "balance");
+
 
         add(mainPanel);
         cardLayout.show(mainPanel, "welcome"); // start screen
@@ -73,7 +72,7 @@ public class ATMInterface extends JFrame {
             if (matchedUser.isPresent()) {
                 JOptionPane.showMessageDialog(this, "Login successful! Welcome " + matchedUser.get().getUsername());
                 // optionally store the logged-in user:
-                // this.loggedInUser = matchedUser.get();
+                loggedInUser = matchedUser.get();
                 cardLayout.show(mainPanel, "menu");
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid PIN. Try again.");
@@ -97,7 +96,10 @@ public class ATMInterface extends JFrame {
 
         withdrawButton.addActionListener(e -> cardLayout.show(mainPanel, "withdraw"));
         depositButton.addActionListener(e -> cardLayout.show(mainPanel, "deposit"));
-        balanceButton.addActionListener(e -> cardLayout.show(mainPanel, "balance"));
+        balanceButton.addActionListener(e -> {
+            mainPanel.add(createBalancePanel(), "balance"); // create it fresh with latest balances
+            cardLayout.show(mainPanel, "balance");
+        });
         exitButton.addActionListener(e -> System.exit(0));
 
         panel.add(withdrawButton);
@@ -118,9 +120,9 @@ public class ATMInterface extends JFrame {
         confirmButton.addActionListener(e -> {
             try {
                 int amount = Integer.parseInt(amountField.getText());
-                boolean success = checking.withdraw(amount);
+                boolean success = loggedInUser.getCheckingAcct().withdraw(amount);
                 if (success) {
-                    JOptionPane.showMessageDialog(this, "Withdrawal successful! New balance: $" + checking.getBalance());
+                    JOptionPane.showMessageDialog(this, "Withdrawal successful! New balance: $" + loggedInUser.getCheckingAcct().getBalance());
                     cardLayout.show(mainPanel, "menu");
                 } else {
                     JOptionPane.showMessageDialog(this, "Withdrawal failed. Limit exceeded or insufficient balance.");
@@ -133,42 +135,86 @@ public class ATMInterface extends JFrame {
         panel.add(label, BorderLayout.NORTH);
         panel.add(amountField, BorderLayout.CENTER);
         panel.add(confirmButton, BorderLayout.SOUTH);
-
+        UserDataStore.saveUsers(users);
         return panel;
     }
 
     private JPanel createDepositPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
 
         JLabel label = new JLabel("Enter amount to deposit:", SwingConstants.CENTER);
         JTextField amountField = new JTextField();
+
+        String[] accountOptions = {"Checking", "Saving"};
+        JComboBox<String> accountSelector = new JComboBox<>(accountOptions);
+
         JButton confirmButton = new JButton("Confirm");
 
         confirmButton.addActionListener(e -> {
-            double amount = Double.parseDouble(amountField.getText());
-            balance += amount;
-            JOptionPane.showMessageDialog(this, "Deposit successful! New balance: $" + balance);
-            cardLayout.show(mainPanel, "menu");
+            try {
+                int amount = Integer.parseInt(amountField.getText());
+                String selected = (String) accountSelector.getSelectedItem();
+                checking = loggedInUser.getCheckingAcct();
+                saving = loggedInUser.getSavingAcct();
+                boolean success = false;
+
+                if ("Checking".equals(selected)) {
+                    success = checking.deposit(amount);
+                } else if ("Saving".equals(selected)) {
+                    success = saving.deposit(amount);
+                }
+
+                if (success) {
+                    JOptionPane.showMessageDialog(this,
+                            "Deposit successful!\nChecking: $" + checking.getBalance() +
+                                    "\nSaving: $" + saving.getBalance());
+                    cardLayout.show(mainPanel, "menu");
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Deposit failed. Daily limit may have been exceeded.",
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Invalid input. Please enter a valid number.",
+                        "Input Error", JOptionPane.ERROR_MESSAGE);
+            } catch (AntiMoneyLaunderingException ex) {
+                throw new RuntimeException(ex);
+            }
+            UserDataStore.saveUsers(users);
         });
 
-        panel.add(label, BorderLayout.NORTH);
-        panel.add(amountField, BorderLayout.CENTER);
+        JPanel inputPanel = new JPanel(new GridLayout(3, 1, 10, 10));
+        inputPanel.add(label);
+        inputPanel.add(amountField);
+        inputPanel.add(accountSelector);
+
+        panel.add(inputPanel, BorderLayout.CENTER);
         panel.add(confirmButton, BorderLayout.SOUTH);
 
         return panel;
     }
 
     private JPanel createBalancePanel() {
-        JPanel panel = new JPanel(new BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
 
-        JLabel label = new JLabel("Your current balance is: $" + balance, SwingConstants.CENTER);
+        checking = loggedInUser.getCheckingAcct();
+        saving = loggedInUser.getSavingAcct();
+        // Create balance labels
+        JLabel checkingLabel = new JLabel("Checking Account Balance: $" + checking.getBalance(), SwingConstants.CENTER);
+        JLabel savingLabel = new JLabel("Saving Account Balance: $" + saving.getBalance(), SwingConstants.CENTER);
+
+        // Back button
         JButton backButton = new JButton("Back to Menu");
-
         backButton.addActionListener(e -> cardLayout.show(mainPanel, "menu"));
 
-        panel.add(label, BorderLayout.CENTER);
-        panel.add(backButton, BorderLayout.SOUTH);
+        // Stack both labels in a sub-panel
+        JPanel balanceInfoPanel = new JPanel(new GridLayout(2, 1, 10, 10));
+        balanceInfoPanel.add(checkingLabel);
+        balanceInfoPanel.add(savingLabel);
 
+        panel.add(balanceInfoPanel, BorderLayout.CENTER);
+        panel.add(backButton, BorderLayout.SOUTH);
         return panel;
     }
 
