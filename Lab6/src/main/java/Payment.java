@@ -28,6 +28,8 @@ public class Payment {
             }
             history.addFirst(amountDue);
             user.setPaymentHistory(history);
+            UserDataStore.saveUsers(UtilityCompanyUI.users);
+            PaymentDataStore.savePaymentHistories(UtilityCompanyUI.users);
 
             JOptionPane.showMessageDialog(parent,
                     "Payment of $" + amountDue + " was successful.\nNext due date: " +

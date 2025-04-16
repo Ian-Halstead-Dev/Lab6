@@ -6,11 +6,8 @@ public class UtilityCompanyUI extends JFrame {
     private User loggedInUser = null;
     private Checking userCheckingAccount = new Checking();
     static Set<User> users = UserDataStore.loadUsers();
+    static { PaymentDataStore.loadPaymentHistories(users); }
     private Home home;
-
-//    public UtilityCompanyUI(){
-//        this(null);
-//    }
     public UtilityCompanyUI(Home home) {
         setTitle("Utility Company Portal");
         setSize(400, 300);
@@ -87,6 +84,7 @@ public class UtilityCompanyUI extends JFrame {
             user.setAccNum(rand.nextInt(1000000));
             users.add(user);
             UserDataStore.saveUsers(users);
+            PaymentDataStore.savePaymentHistories(users);
 
 
             JOptionPane.showMessageDialog(this, "Account created! Your account number: " + user.getAccNum());
