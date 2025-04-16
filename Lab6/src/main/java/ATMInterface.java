@@ -2,12 +2,17 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Optional;
+import java.util.Set;
 
 public class ATMInterface extends JFrame {
     private CardLayout cardLayout;
     private JPanel mainPanel;
 
     private double balance = 1000.00; // Example balance
+    private Checking checking = new Checking();
+    private Saving saving = new Saving();
+    static Set<User> users = UserDataStore.loadUsers();
 
     public ATMInterface() {
         // Frame settings
@@ -60,8 +65,15 @@ public class ATMInterface extends JFrame {
         JButton submitButton = new JButton("Submit");
 
         submitButton.addActionListener(e -> {
-            String pin = new String(pinField.getPassword());
-            if (pin.equals("1234")) { // Simple PIN check
+            String enteredPin = new String(pinField.getPassword());
+            Optional<User> matchedUser = users.stream()
+                    .filter(u -> u.getPin() == Integer.parseInt(enteredPin))
+                    .findFirst();
+
+            if (matchedUser.isPresent()) {
+                JOptionPane.showMessageDialog(this, "Login successful! Welcome " + matchedUser.get().getUsername());
+                // optionally store the logged-in user:
+                // this.loggedInUser = matchedUser.get();
                 cardLayout.show(mainPanel, "menu");
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid PIN. Try again.");
@@ -104,13 +116,17 @@ public class ATMInterface extends JFrame {
         JButton confirmButton = new JButton("Confirm");
 
         confirmButton.addActionListener(e -> {
-            double amount = Double.parseDouble(amountField.getText());
-            if (amount > balance) {
-                JOptionPane.showMessageDialog(this, "Insufficient balance.");
-            } else {
-                balance -= amount;
-                JOptionPane.showMessageDialog(this, "Withdrawal successful! New balance: $" + balance);
-                cardLayout.show(mainPanel, "menu");
+            try {
+                int amount = Integer.parseInt(amountField.getText());
+                boolean success = checking.withdraw(amount);
+                if (success) {
+                    JOptionPane.showMessageDialog(this, "Withdrawal successful! New balance: $" + checking.getBalance());
+                    cardLayout.show(mainPanel, "menu");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Withdrawal failed. Limit exceeded or insufficient balance.");
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Invalid input. Please enter a number.");
             }
         });
 

@@ -148,12 +148,7 @@ public class UtilityCompanyUI extends JFrame {
             userCheckingAccount = loggedInUser.getCheckingAcct();
             int confirm = JOptionPane.showConfirmDialog(this, "Next Payment: $" + nextPayment + "\nDue Date: 30 days from now\n\nDo you want to pay this now?", "Pay Bill", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
-                boolean success = Payment.payUtilityBill(loggedInUser, userCheckingAccount, company);
-                if (success) {
-                    JOptionPane.showMessageDialog(this, "Bill paid successfully from your checking account.");
-                } else {
-                    JOptionPane.showMessageDialog(this, "Payment failed. Check your account balance or limits.");
-                }
+                Payment.payUtilityBill(loggedInUser, userCheckingAccount, this);
             }
         });
 

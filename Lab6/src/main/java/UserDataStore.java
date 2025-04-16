@@ -7,11 +7,14 @@ public class UserDataStore {
     public static void saveUsers(Set<User> users) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH))) {
             for (User user : users) {
-                int balance = user.getCheckingAcct() != null ? user.getCheckingAcct().getBalance() : 0;
-                writer.write(user.getUsername() + "," +
+                int checkingBalance = user.getCheckingAcct() != null ? user.getCheckingAcct().getBalance() : 0;
+                int savingBalance = user.getSavingAcct() != null ? user.getSavingAcct().getBalance() : 0;
+                writer.write(user.getPin() + "," +
+                        user.getUsername() + "," +
                         user.getPassword() + "," +
                         user.getAccNum() + "," +
-                        balance);
+                        checkingBalance + "," +
+                        savingBalance);
                 writer.newLine();
             }
         } catch (IOException e) {
@@ -25,14 +28,18 @@ public class UserDataStore {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
-                if (parts.length == 4) {
+                if (parts.length == 6) {
                     User user = new User();
-                    user.setUsername(parts[0]);
-                    user.setPassword(parts[1]);
-                    user.setAccNum(Integer.parseInt(parts[2]));
+                    user.setPin(Integer.parseInt(parts[0]));
+                    user.setUsername(parts[1]);
+                    user.setPassword(parts[2]);
+                    user.setAccNum(Integer.parseInt(parts[3]));
                     Checking checking = new Checking();
-                    checking.setBalance(Integer.parseInt(parts[3]));
+                    checking.setBalance(Integer.parseInt(parts[4]));
+                    Saving saving = new Saving();
+                    saving.setBalance(Integer.parseInt(parts[5]));
                     user.setCheckingAcct(checking);
+                    user.setSavingAcct(saving);
                     users.add(user);
                 }
             }

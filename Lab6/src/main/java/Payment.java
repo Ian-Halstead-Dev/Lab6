@@ -1,9 +1,11 @@
+import javax.swing.*;
+import java.awt.*;
 import java.time.LocalDate;
 import java.util.ArrayDeque;
 
 public class Payment {
 
-    public static boolean payUtilityBill(User user, Checking checking, UtilityCompany company) {
+    public static boolean payUtilityBill(User user, Checking checking, Component parent) {
         // Get the next bill amount
         int amountDue = user.getNextPayment();
 
@@ -26,11 +28,15 @@ public class Payment {
             history.addFirst(amountDue);
             user.setPaymentHistory(history);
 
-            System.out.println("Payment of $" + amountDue + " was successful.");
-            System.out.println("Due Date: " + LocalDate.now().plusDays(30));
+            JOptionPane.showMessageDialog(parent,
+                    "Payment of $" + amountDue + " was successful.\nNext due date: " +
+                            LocalDate.now().plusDays(30));
             return true;
         } else {
-            System.out.println("Payment failed: Withdrawal limit reached or other issue.");
+            JOptionPane.showMessageDialog(parent,
+                    "Payment failed: Withdrawal limit reached or other issue.",
+                    "Payment Error",
+                    JOptionPane.ERROR_MESSAGE);
             return false;
         }
     }
