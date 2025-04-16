@@ -1,13 +1,11 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.util.*;
 
 public class UtilityCompanyUI extends JFrame {
-
-    private static UtilityCompany company = new UtilityCompany();
     private User loggedInUser = null;
     private Checking userCheckingAccount = new Checking();
+    static Set<User> users = UserDataStore.loadUsers();
 
     public UtilityCompanyUI() {
         setTitle("Utility Company Portal");
@@ -59,7 +57,7 @@ public class UtilityCompanyUI extends JFrame {
             String pass = passwordField.getText();
             Random rand = new Random();
 
-            boolean exists = UtilityCompany.users.stream()
+            boolean exists = users.stream()
                     .anyMatch(u -> u.getUsername().equals(uname));
             if (exists) {
                 JOptionPane.showMessageDialog(this, "Username already exists. Try another.");
@@ -69,8 +67,8 @@ public class UtilityCompanyUI extends JFrame {
             user.setUsername(uname);
             user.setPassword(pass);
             user.setAccNum(rand.nextInt(1000000));
-            UtilityCompany.users.add(user);
-            UserDataStore.saveUsers(UtilityCompany.users);
+            users.add(user);
+            UserDataStore.saveUsers(users);
 
 
             JOptionPane.showMessageDialog(this, "Account created! Your account number: " + user.getAccNum());
@@ -104,7 +102,7 @@ public class UtilityCompanyUI extends JFrame {
             String input = usernameOrAccField.getText();
             String pass = passwordField.getText();
 
-            for (User u : UtilityCompany.users) {
+            for (User u : users) {
                 if ((u.getUsername().equals(input) || Integer.toString(u.getAccNum()).equals(input)) && u.getPassword().equals(pass)) {
                     loggedInUser = u;
                     JOptionPane.showMessageDialog(this, "Login successful! Welcome, " + u.getUsername());
