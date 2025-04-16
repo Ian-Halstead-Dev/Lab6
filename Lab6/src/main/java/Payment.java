@@ -22,6 +22,7 @@ public class Payment {
             // Add payment to user's utility payment history (limited to 3 entries)
             ArrayDeque<Integer> history = user.getPaymentHistoy();
             user.setNextPayment(-1);
+
             if (history.size() == 3) {
                 history.removeLast();
             }

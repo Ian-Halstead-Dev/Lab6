@@ -16,7 +16,13 @@ public class Checking extends AbstractAccount {
         super();
     }
     public boolean withdraw(int amount) {
+
+        if(amount < 0) {
+            throw new IllegalArgumentException();
+        }
         int today = DayTracker.getCurrentDay();
+
+
 
         // Reset daily tracker if new day
         if (today != lastWithdrawDay) {

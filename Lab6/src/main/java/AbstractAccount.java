@@ -12,6 +12,9 @@ public abstract class AbstractAccount {
     }
 
     public boolean deposit(int amount) throws AntiMoneyLaunderingException {
+        if(amount < 0) {
+            throw new IllegalArgumentException();
+        }
       if(amount + currentDeposit > maxDeposit) {
         throw new AntiMoneyLaunderingException();
       }
