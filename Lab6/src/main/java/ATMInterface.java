@@ -60,6 +60,8 @@ public class ATMInterface extends JFrame {
         return panel;
     }
 
+    //This panel allows the user to add their checking account pin to the utility account so that
+    //they can pay bills.
     private JPanel createPinPanel() {
         JPanel panel = new JPanel(new BorderLayout());
 
@@ -134,6 +136,7 @@ public class ATMInterface extends JFrame {
         return panel;
     }
 
+    //This is the panel to make a transfer between checking and savings accounts.
     private JPanel createTransferPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 

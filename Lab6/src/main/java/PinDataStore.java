@@ -5,6 +5,8 @@ public class PinDataStore {
     private static final String FILE_PATH = "pins.txt";
 
     // Save PINs for each user’s checking account
+    //This implementation allows for a user, created in UtilityCompany to optionally connect their
+    //checking account via pin to pay bills with.
     public static void savePins(Set<User> users) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH))) {
             for (User user : users) {
