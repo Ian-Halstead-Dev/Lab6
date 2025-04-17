@@ -76,34 +76,21 @@ public class BankingAppTests {
     public void testTransferFromSavingsToChecking() throws AntiMoneyLaunderingException {
         saving.setBalance(500);
         checking.setBalance(1000);
-        saving.transferToday = 0;
-        saving.transferToday += 50;
         saving.setBalance(450);
         checking.setBalance(1050);
         assertEquals(450, saving.getBalance());
         assertEquals(1050, checking.getBalance());
     }
 
-    @Test
-    public void testTransferExceedingDailyLimit() throws AntiMoneyLaunderingException {
-        saving.deposit(1000);
-        saving.transferToday = 100; // Already reached limit
-        int preBalance = saving.getBalance();
-        int preChecking = checking.getBalance();
 
-        if (saving.transferToday + 50 > 100) {
-            assertEquals(preBalance, saving.getBalance());
-            assertEquals(preChecking, checking.getBalance());
-        }
-    }
 
     @Test
     public void testTransferExactlyToLimit() throws AntiMoneyLaunderingException {
-        saving.transferToday = 0;
+
         saving.setBalance(1000);
         checking.setBalance(1000);
 
-        saving.transferToday += 100;
+
         saving.setBalance(900);
         checking.setBalance(1100);
 
@@ -193,6 +180,53 @@ public class BankingAppTests {
         Set<User> users = UserDataStore.loadUsers();
         assertTrue(users.isEmpty());
     }
+
+    // === SAVINGS TRANSFER TESTS ===
+
+    @Test
+    public void testTransferToCheckingWithinLimit() throws AntiMoneyLaunderingException, InsufficientFundsException {
+        saving.setBalance(500);
+        checking.setBalance(1000);
+
+        saving.transfer(checking, 50);
+
+        assertEquals(450, saving.getBalance());
+        assertEquals(1050, checking.getBalance());
+    }
+
+    @Test
+    public void testTransferToCheckingExceedingDailyLimit() throws AntiMoneyLaunderingException, InsufficientFundsException {
+        saving.setBalance(1000);
+        checking.setBalance(500);
+
+       assertThrows(AntiMoneyLaunderingException.class,  () -> saving.transfer(checking, 1000));
+
+
+        assertEquals(1000, saving.getBalance()); // No transfer occurred
+        assertEquals(500, checking.getBalance());
+    }
+
+    @Test
+    public void testTransferToCheckingExceedsLimitAfterPartialTransfers() throws AntiMoneyLaunderingException, InsufficientFundsException {
+        saving.setBalance(10);
+        checking.setBalance(500);
+        assertThrows(InsufficientFundsException.class, () ->  saving.transfer(checking, 20));
+
+        assertEquals(10, saving.getBalance());
+        assertEquals(500, checking.getBalance());
+    }
+
+    @Test
+    public void testTransferToCheckingExactlyAtLimit() throws AntiMoneyLaunderingException, InsufficientFundsException {
+        saving.setBalance(1000);
+        checking.setBalance(500);
+        saving.transfer(checking, 50);
+       saving.transfer(checking, 50);
+
+        assertEquals(900, saving.getBalance());
+        assertEquals(600, checking.getBalance());
+    }
+
 
     // === CLEANUP ===
 
