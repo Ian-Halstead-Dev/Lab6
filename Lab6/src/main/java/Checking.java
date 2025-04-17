@@ -12,9 +12,12 @@ public class Checking extends AbstractAccount {
 
     private int withdrawToday = 0;
     private int lastWithdrawDay = -1;
+
     public Checking() {
         super();
     }
+
+
     public boolean withdraw(int amount) {
 
         if(amount < 0) {

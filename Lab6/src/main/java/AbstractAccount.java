@@ -35,6 +35,14 @@ public abstract class AbstractAccount {
         return true;
     }
 
+    public void transfer(AbstractAccount fromAccount, AbstractAccount toAccount, int amount) throws InsufficientFundsException {
+        if(fromAccount.balance - amount < 0) {
+            throw new InsufficientFundsException();
+        }
+        fromAccount.balance -= amount;
+        toAccount.balance += amount;
+    }
+
 
     public int getBalance() {
       return balance;

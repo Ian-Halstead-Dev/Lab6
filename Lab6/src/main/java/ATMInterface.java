@@ -38,6 +38,7 @@ public class ATMInterface extends JFrame {
         cardLayout.show(mainPanel, "welcome"); // start screen
     }
 
+
     private JPanel createWelcomePanel() {
         JPanel panel = new JPanel();
         panel.setLayout(null);
@@ -113,7 +114,73 @@ public class ATMInterface extends JFrame {
         panel.add(withdrawButton);
         panel.add(depositButton);
         panel.add(balanceButton);
+        JButton transferButton = new JButton("Transfer Funds");
+        transferButton.addActionListener(e -> {
+            mainPanel.add(createTransferPanel(), "transfer");
+            cardLayout.show(mainPanel, "transfer");
+        });
+
+        panel.add(transferButton); // Add this before balanceButton or wherever you want it
         panel.add(exitButton);
+
+        return panel;
+    }
+
+    private JPanel createTransferPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+
+        JLabel label = new JLabel("Transfer Amount:", SwingConstants.CENTER);
+        JTextField amountField = new JTextField();
+
+        String[] accountOptions = {"Checking to Saving", "Saving to Checking"};
+        JComboBox<String> directionSelector = new JComboBox<>(accountOptions);
+
+        JButton confirmButton = new JButton("Confirm");
+        JButton backButton = new JButton("Back to Menu");
+
+        confirmButton.addActionListener(e -> {
+            try {
+                int amount = Integer.parseInt(amountField.getText());
+                String direction = (String) directionSelector.getSelectedItem();
+                checking = loggedInUser.getCheckingAcct();
+                saving = loggedInUser.getSavingAcct();
+
+                if ("Checking to Saving".equals(direction)) {
+                    checking.transfer(checking, saving, amount);
+                    JOptionPane.showMessageDialog(this, "Transfer successful!\n" +
+                            "Checking: $" + checking.getBalance() +
+                            "\nSaving: $" + saving.getBalance());
+                } else if ("Saving to Checking".equals(direction)) {
+                    saving.transfer(checking, amount); // calls Saving.transfer override
+                    JOptionPane.showMessageDialog(this, "Transfer successful!\n" +
+                            "Saving: $" + saving.getBalance() +
+                            "\nChecking: $" + checking.getBalance());
+                }
+                UserDataStore.saveUsers(users);
+                cardLayout.show(mainPanel, "menu");
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Invalid amount. Please enter a number.");
+            } catch (InsufficientFundsException ex) {
+                JOptionPane.showMessageDialog(this, "Transfer failed: Insufficient funds.");
+            } catch (AntiMoneyLaunderingException ex) {
+                JOptionPane.showMessageDialog(this, "Transfer exceeds daily limit.", "Limit Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        backButton.addActionListener(e -> cardLayout.show(mainPanel, "menu"));
+
+        JPanel inputPanel = new JPanel(new GridLayout(3, 1, 10, 10));
+        inputPanel.add(label);
+        inputPanel.add(amountField);
+        inputPanel.add(directionSelector);
+
+        JPanel bottomPanel = new JPanel(new FlowLayout());
+        bottomPanel.add(confirmButton);
+        bottomPanel.add(backButton);
+
+        panel.add(inputPanel, BorderLayout.CENTER);
+        panel.add(bottomPanel, BorderLayout.SOUTH);
 
         return panel;
     }

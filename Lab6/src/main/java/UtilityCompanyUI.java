@@ -161,7 +161,7 @@ public class UtilityCompanyUI extends JFrame {
         nextPaymentBtn.addActionListener(e -> {
             int nextPayment = loggedInUser.getNextPayment();
             userCheckingAccount = loggedInUser.getCheckingAcct();
-            int confirm = JOptionPane.showConfirmDialog(this, "Next Payment: $" + nextPayment + "\nDue Date: 30 days from now\n\nDo you want to pay this now?", "Pay Bill", JOptionPane.YES_NO_OPTION);
+            int confirm = JOptionPane.showConfirmDialog(this, "Next Payment: $" + nextPayment + "\n\nDo you want to pay this now?", "Pay Bill", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
                 Payment.payUtilityBill(loggedInUser, userCheckingAccount, this);
             }

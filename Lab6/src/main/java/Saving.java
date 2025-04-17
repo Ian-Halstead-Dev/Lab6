@@ -9,11 +9,30 @@
 // • The bank does not allow overdraft, the balance can NOT be negative.
 //This class implements the account for savings
 public class Saving extends AbstractAccount{
-  int transferToday;
   int maxTransfer;
+  private int transferToday = 0;
+  private int lastTransferDay = -1;
+
   public Saving() {
     super(); // Withdraw here is used as
     this.maxTransfer = 100;
+  }
+
+  public void transfer(AbstractAccount toAccount, int amount ) throws InsufficientFundsException, AntiMoneyLaunderingException {
+    int today = DayTracker.getCurrentDay();
+
+    // Reset daily tracker if new day
+    if (today != lastTransferDay) {
+      transferToday = 0;
+      lastTransferDay = today;
+    }
+
+    if(amount + transferToday > 100) {
+
+      throw new AntiMoneyLaunderingException();
+    }
+
+    super.transfer(this, toAccount, amount);
   }
 
 }
