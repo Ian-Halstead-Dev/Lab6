@@ -108,10 +108,13 @@ public class ATMInterface extends JFrame {
         JButton exitButton = new JButton("Exit");
         JButton homeButton = new JButton("Back to Home");
         homeButton.addActionListener(e -> {
+            UserDataStore.saveUsers(users);
             this.dispose();  // Close ATM window
             home.setVisible(true);  // Show Home window again
         });
 
+        users = UserDataStore.loadUsers();
+        PinDataStore.loadPins(users);
         panel.add(homeButton);
         withdrawButton.addActionListener(e -> cardLayout.show(mainPanel, "withdraw"));
         depositButton.addActionListener(e -> cardLayout.show(mainPanel, "deposit"));
@@ -203,6 +206,7 @@ public class ATMInterface extends JFrame {
 
         panel.add(inputPanel, BorderLayout.CENTER);
         panel.add(bottomPanel, BorderLayout.SOUTH);
+        UserDataStore.saveUsers(users);
 
         return panel;
     }
@@ -220,6 +224,7 @@ public class ATMInterface extends JFrame {
                 int amount = Integer.parseInt(amountField.getText());
                 boolean success = loggedInUser.getCheckingAcct().withdraw(amount);
                 if (success) {
+                    UserDataStore.saveUsers(users);
                     JOptionPane.showMessageDialog(this, "Withdrawal successful! New balance: $" + loggedInUser.getCheckingAcct().getBalance());
                     cardLayout.show(mainPanel, "menu");
                 } else {
@@ -278,6 +283,7 @@ public class ATMInterface extends JFrame {
                 }
 
                 if (success) {
+                    UserDataStore.saveUsers(users);
                     JOptionPane.showMessageDialog(this,
                             "Deposit successful!\nChecking: $" + checking.getBalance() +
                                     "\nSaving: $" + saving.getBalance());
@@ -301,7 +307,7 @@ public class ATMInterface extends JFrame {
                         "Input Error", JOptionPane.ERROR_MESSAGE);
             }
 
-            UserDataStore.saveUsers(users);
+
         });
 
         backButton.addActionListener(e -> cardLayout.show(mainPanel, "menu"));

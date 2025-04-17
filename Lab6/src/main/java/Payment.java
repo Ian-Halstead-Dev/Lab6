@@ -6,12 +6,17 @@ import java.util.ArrayDeque;
 public class Payment {
     //This is the class that allows the user to pay their utility bill.
     public static boolean payUtilityBill(User user, Checking checking, Component parent) {
-        // Get the next bill amount
         int amountDue = user.getNextPayment();
 
-        // Check if sufficient balance is available
+        if (amountDue <= 0) {
+            JOptionPane.showMessageDialog(parent,
+                    "No payment due at this time.",
+                    "Payment Info",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return false;
+        }
+
         if (checking.getBalance() < amountDue) {
-            System.out.println("Payment failed: Insufficient balance in checking account.");
             JOptionPane.showMessageDialog(parent,
                     "Payment failed: Insufficient balance in checking account.",
                     "Payment Error",
@@ -19,20 +24,20 @@ public class Payment {
             return false;
         }
 
-        // Attempt to withdraw the payment amount from checking account
-        boolean withdrawn = checking.withdraw(amountDue);
+        boolean withdrawn = checking.withdraw(amountDue);  //  use passed-in checking account
 
         if (withdrawn) {
-            // Add payment to user's utility payment history (limited to 3 entries)
+            // Update payment history
             ArrayDeque<Integer> history = user.getPaymentHistoy();
-            user.setNextPayment(-1);
-
             if (history.size() == 3) {
-                history.removeLast();
+                history.removeLast();  // maintain size limit
             }
-            //Add the new payment to the history, delete the last, and save it into the txt file.
             history.addFirst(amountDue);
             user.setPaymentHistory(history);
+
+            user.setNextPayment(-1);  //  reset next payment
+
+            // Save everything
             UserDataStore.saveUsers(UtilityCompanyUI.users);
             PaymentDataStore.savePaymentHistories(UtilityCompanyUI.users);
 

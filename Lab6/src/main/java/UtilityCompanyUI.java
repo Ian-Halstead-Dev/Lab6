@@ -5,7 +5,7 @@ import java.util.*;
 //payment they have to make.
 public class UtilityCompanyUI extends JFrame {
     private User loggedInUser = null;
-    private Checking userCheckingAccount = new Checking();
+
     static Set<User> users = UserDataStore.loadUsers();
     static { PaymentDataStore.loadPaymentHistories(users); }
     static { PinDataStore.loadPins(users); }
@@ -83,7 +83,7 @@ public class UtilityCompanyUI extends JFrame {
 
             user.setUsername(uname);
             user.setPassword(pass);
-            user.setAccNum(rand.nextInt(1000000));
+            user.setAccNum(100000 + rand.nextInt(900000));
             users.add(user);
             UserDataStore.saveUsers(users);
             PaymentDataStore.savePaymentHistories(users);
@@ -120,15 +120,34 @@ public class UtilityCompanyUI extends JFrame {
             String input = usernameOrAccField.getText();
             String pass = passwordField.getText();
 
+            // First, find the matching user BEFORE loading
+            User matchingUser = null;
             for (User u : users) {
                 if ((u.getUsername().equals(input) || Integer.toString(u.getAccNum()).equals(input)) && u.getPassword().equals(pass)) {
-                    loggedInUser = u;
-                    JOptionPane.showMessageDialog(this, "Login successful! Welcome, " + u.getUsername());
-                    showAccountScreen();
-                    return;
+                    matchingUser = u;
+                    break;
                 }
             }
-            JOptionPane.showMessageDialog(this, "Invalid credentials. Try again.");
+
+            if (matchingUser != null) {
+                // Reload all data fresh from disk
+                users = UserDataStore.loadUsers();
+                PaymentDataStore.loadPaymentHistories(users);
+                PinDataStore.loadPins(users);
+
+                // Find the reloaded version of the matched user (same accNum)
+                for (User reloaded : users) {
+                    if (reloaded.getAccNum() == matchingUser.getAccNum()) {
+                        loggedInUser = reloaded;
+                        break;
+                    }
+                }
+
+                JOptionPane.showMessageDialog(this, "Login successful! Welcome, " + loggedInUser.getUsername());
+                showAccountScreen();
+            } else {
+                JOptionPane.showMessageDialog(this, "Invalid credentials. Try again.");
+            }
         });
 
         backBtn.addActionListener(e -> showWelcomeScreen());
@@ -151,6 +170,10 @@ public class UtilityCompanyUI extends JFrame {
         add(nextPaymentBtn);
         add(setPinButton);
         add(logoutBtn);
+
+//        users = UserDataStore.loadUsers();
+//        PaymentDataStore.loadPaymentHistories(users);
+//        PinDataStore.loadPins(users);
 
         paymentHistoryBtn.addActionListener(e -> {
             ArrayDeque<Integer> history = loggedInUser.getPaymentHistoy();
@@ -191,14 +214,19 @@ public class UtilityCompanyUI extends JFrame {
         });
         nextPaymentBtn.addActionListener(e -> {
             int nextPayment = loggedInUser.getNextPayment();
-            userCheckingAccount = loggedInUser.getCheckingAcct();
+            Checking userCheckingAccount = loggedInUser.getCheckingAcct();
             int confirm = JOptionPane.showConfirmDialog(this, "Next Payment: $" + nextPayment + "\n\nDo you want to pay this now?", "Pay Bill", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
                 Payment.payUtilityBill(loggedInUser, userCheckingAccount, this);
+                UserDataStore.saveUsers(users);
+                PaymentDataStore.savePaymentHistories(UtilityCompanyUI.users);
             }
+
         });
 
         logoutBtn.addActionListener(e -> {
+            UserDataStore.saveUsers(users);
+            PaymentDataStore.savePaymentHistories(users);
             loggedInUser = null;
             showWelcomeScreen();
         });

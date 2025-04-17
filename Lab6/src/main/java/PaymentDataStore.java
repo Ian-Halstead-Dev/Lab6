@@ -4,57 +4,87 @@ import java.util.*;
 public class PaymentDataStore {
     private static final String FILE_PATH = "paymentHistory.txt";
 
-    // Save all users' payment histories using this class.
-    //Payment History is stored as AccNum:Amount,Amount,Amount
+    /**
+     * Save all users' payment histories and next payments to the file.
+     * Format: accNum:nextPayment:amount,amount,amount
+     */
     public static void savePaymentHistories(Set<User> users) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH))) {
             for (User user : users) {
+                int accNum = user.getAccNum();
+                int nextPayment = user.getNextPayment();
                 ArrayDeque<Integer> history = user.getPaymentHistoy();
-                writer.write(user.getAccNum() + ":");
+
+                StringBuilder line = new StringBuilder();
+                line.append(accNum).append(":").append(nextPayment).append(":");
 
                 Iterator<Integer> it = history.iterator();
                 while (it.hasNext()) {
-                    writer.write(it.next().toString());
+                    line.append(it.next());
                     if (it.hasNext()) {
-                        writer.write(",");
+                        line.append(",");
                     }
                 }
+
+                writer.write(line.toString());
                 writer.newLine();
             }
         } catch (IOException e) {
+            System.err.println("Error saving payment histories: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    // Load payment histories and apply to matching users
+    /**
+     * Load payment histories and next payments from the file into the provided users.
+     */
     public static void loadPaymentHistories(Set<User> users) {
         Map<Integer, ArrayDeque<Integer>> historyMap = new HashMap<>();
+        Map<Integer, Integer> nextPaymentMap = new HashMap<>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) {
             String line;
+
             while ((line = reader.readLine()) != null) {
-                String[] split = line.split(":");
-                if (split.length != 2) continue;
+                String[] parts = line.split(":");
 
-                int accNum = Integer.parseInt(split[0]);
-                String[] amounts = split[1].split(",");
-
-                ArrayDeque<Integer> deque = new ArrayDeque<>();
-                for (String amount : amounts) {
-                    deque.add(Integer.parseInt(amount));
+                if (parts.length < 3) {
+                    System.err.println("Skipping malformed line: " + line);
+                    continue;
                 }
-                historyMap.put(accNum, deque);
+
+                try {
+                    int accNum = Integer.parseInt(parts[0]);
+                    int nextPayment = Integer.parseInt(parts[1]);
+
+                    ArrayDeque<Integer> history = new ArrayDeque<>();
+                    if (!parts[2].isEmpty()) {
+                        String[] amounts = parts[2].split(",");
+                        for (String amount : amounts) {
+                            history.add(Integer.parseInt(amount));
+                        }
+                    }
+
+                    nextPaymentMap.put(accNum, nextPayment);
+                    historyMap.put(accNum, history);
+                } catch (NumberFormatException e) {
+                    System.err.println("Skipping line with invalid number: " + line);
+                }
             }
         } catch (FileNotFoundException e) {
-            // No history yet; safe to ignore
+            // No file exists yet — that's fine.
         } catch (IOException e) {
+            System.err.println("Error reading payment histories: " + e.getMessage());
             e.printStackTrace();
         }
 
-        // Apply to matching users
         for (User user : users) {
-            if (historyMap.containsKey(user.getAccNum())) {
-                user.setPaymentHistory(historyMap.get(user.getAccNum()));
+            int accNum = user.getAccNum();
+            if (nextPaymentMap.containsKey(accNum)) {
+                user.setNextPayment(nextPaymentMap.get(accNum));
+            }
+            if (historyMap.containsKey(accNum)) {
+                user.setPaymentHistory(historyMap.get(accNum));
             }
         }
     }

@@ -27,7 +27,7 @@ public class User {
     public int getNextPayment() {
         if(nextPayment == -1) {
         Random rand = new Random();
-        nextPayment = rand.nextInt(100);
+        nextPayment = 1 + rand.nextInt(99);
         }
         return nextPayment;
     }
