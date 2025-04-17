@@ -7,7 +7,7 @@
 // • The user can check the balance of their checking account.
 // • The bank does not allow overdraft, the balance can NOT be negative
 
-
+//This is the class for a checking account
 public class Checking extends AbstractAccount {
 
     private int withdrawToday = 0;

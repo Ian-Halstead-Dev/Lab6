@@ -13,7 +13,7 @@ public class ATMInterface extends JFrame {
     static Set<User> users = UserDataStore.loadUsers();
     private User loggedInUser;
     private Home home;
-
+    //This class implements the front end UI for the ATM.
     public ATMInterface(Home home) {
         // Frame settings
         this.home = home;
@@ -117,7 +117,7 @@ public class ATMInterface extends JFrame {
 
         return panel;
     }
-
+    //This method creates the panel to withdraw money from the checking account.
     private JPanel createWithdrawPanel() {
         JPanel panel = new JPanel(new BorderLayout());
 
@@ -146,7 +146,7 @@ public class ATMInterface extends JFrame {
         UserDataStore.saveUsers(users);
         return panel;
     }
-
+    //This method creates the panel to deposit money into the checking or savings account, chosen by a drop down.
     private JPanel createDepositPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 
@@ -202,7 +202,7 @@ public class ATMInterface extends JFrame {
 
         return panel;
     }
-
+    //This method creates the panel for the user to check the balance of their accounts.
     private JPanel createBalancePanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 

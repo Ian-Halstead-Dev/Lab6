@@ -1,3 +1,4 @@
+//This exception is used to keep users from depositing more than $5000 per day
 public class AntiMoneyLaunderingException extends Exception {
   public AntiMoneyLaunderingException() {
       super();

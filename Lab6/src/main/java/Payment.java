@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayDeque;
 
 public class Payment {
-
+    //This is the class that allows the user to pay their utility bill.
     public static boolean payUtilityBill(User user, Checking checking, Component parent) {
         // Get the next bill amount
         int amountDue = user.getNextPayment();
@@ -26,6 +26,7 @@ public class Payment {
             if (history.size() == 3) {
                 history.removeLast();
             }
+            //Add the new payment to the history, delete the last, and save it into the txt file.
             history.addFirst(amountDue);
             user.setPaymentHistory(history);
             UserDataStore.saveUsers(UtilityCompanyUI.users);

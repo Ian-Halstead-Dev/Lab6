@@ -2,7 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class Home extends JFrame {
-
+    //This class is just a UI to have the UtilityCompany or ATM UI displayed.
     public Home() {
         setTitle("Banking & Utility Hub");
         setSize(400, 200);

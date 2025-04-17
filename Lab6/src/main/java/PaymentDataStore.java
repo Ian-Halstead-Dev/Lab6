@@ -4,7 +4,8 @@ import java.util.*;
 public class PaymentDataStore {
     private static final String FILE_PATH = "paymentHistory.txt";
 
-    // Save all users' payment histories
+    // Save all users' payment histories using this class.
+    //Payment History is stored as AccNum:Amount,Amount,Amount
     public static void savePaymentHistories(Set<User> users) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH))) {
             for (User user : users) {

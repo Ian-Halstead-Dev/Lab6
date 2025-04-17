@@ -1,3 +1,4 @@
+//This is the class to track what day it is.
 public class DayTracker {
     private static int currentDay = 1;
 

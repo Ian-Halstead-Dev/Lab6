@@ -1,7 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
 import java.util.*;
-
+//This class implements the UI for the utility company for the user to see their payment history and what
+//payment they have to make.
 public class UtilityCompanyUI extends JFrame {
     private User loggedInUser = null;
     private Checking userCheckingAccount = new Checking();

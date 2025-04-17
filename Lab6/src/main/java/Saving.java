@@ -7,7 +7,7 @@
 // • The user can NOT use this account to pay bills.
 // • The user can check the balance of their saving account.
 // • The bank does not allow overdraft, the balance can NOT be negative.
-
+//This class implements the account for savings
 public class Saving extends AbstractAccount{
   int transferToday;
   int maxTransfer;

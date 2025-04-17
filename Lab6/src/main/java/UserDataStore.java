@@ -1,6 +1,7 @@
 import java.io.*;
 import java.util.*;
-
+//This class implements the code to save and load user data into the txt file.
+//User data is stored as pin,username,password,accNum,checkingBalance,SavingBalance
 public class UserDataStore {
     private static final String FILE_PATH = "users.txt";
 
