@@ -20,7 +20,7 @@ public class Checking extends AbstractAccount {
 
     public boolean withdraw(int amount) {
 
-        if(amount < 0) {
+        if(amount <= 0) {
             throw new IllegalArgumentException();
         }
         int today = DayTracker.getCurrentDay();

@@ -67,6 +67,7 @@ public class ATMInterface extends JFrame {
         JButton submitButton = new JButton("Submit");
 
         submitButton.addActionListener(e -> {
+            try{
             String enteredPin = new String(pinField.getPassword());
             Optional<User> matchedUser = users.stream()
                     .filter(u -> u.getPin() == Integer.parseInt(enteredPin))
@@ -79,6 +80,10 @@ public class ATMInterface extends JFrame {
                 cardLayout.show(mainPanel, "menu");
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid PIN. Try again.");
+            }} catch(NumberFormatException ex){
+                JOptionPane.showMessageDialog(this,
+                        "Please enter a pin number.",
+                            "Input Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -156,15 +161,26 @@ public class ATMInterface extends JFrame {
                             "Saving: $" + saving.getBalance() +
                             "\nChecking: $" + checking.getBalance());
                 }
+
                 UserDataStore.saveUsers(users);
                 cardLayout.show(mainPanel, "menu");
 
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Invalid amount. Please enter a number.");
+                JOptionPane.showMessageDialog(this,
+                        "Invalid amount. Please enter a number.",
+                        "Input Error", JOptionPane.ERROR_MESSAGE);
             } catch (InsufficientFundsException ex) {
-                JOptionPane.showMessageDialog(this, "Transfer failed: Insufficient funds.");
+                JOptionPane.showMessageDialog(this,
+                        "Transfer failed: Insufficient funds.",
+                        "Payment Error", JOptionPane.ERROR_MESSAGE);
             } catch (AntiMoneyLaunderingException ex) {
-                JOptionPane.showMessageDialog(this, "Transfer exceeds daily limit.", "Limit Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Transfer exceeds daily limit.",
+                        "Limit Error", JOptionPane.ERROR_MESSAGE);
+            } catch (IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Invalid Input. Please enter a positive number.",
+                        "Input Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -175,7 +191,7 @@ public class ATMInterface extends JFrame {
         inputPanel.add(amountField);
         inputPanel.add(directionSelector);
 
-        JPanel bottomPanel = new JPanel(new FlowLayout());
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
         bottomPanel.add(confirmButton);
         bottomPanel.add(backButton);
 
@@ -186,11 +202,12 @@ public class ATMInterface extends JFrame {
     }
     //This method creates the panel to withdraw money from the checking account.
     private JPanel createWithdrawPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
 
         JLabel label = new JLabel("Enter amount to withdraw:", SwingConstants.CENTER);
         JTextField amountField = new JTextField();
         JButton confirmButton = new JButton("Confirm");
+        JButton backButton = new JButton("Back to Menu");
 
         confirmButton.addActionListener(e -> {
             try {
@@ -200,17 +217,31 @@ public class ATMInterface extends JFrame {
                     JOptionPane.showMessageDialog(this, "Withdrawal successful! New balance: $" + loggedInUser.getCheckingAcct().getBalance());
                     cardLayout.show(mainPanel, "menu");
                 } else {
-                    JOptionPane.showMessageDialog(this, "Withdrawal failed. Limit exceeded or insufficient balance.");
+                    JOptionPane.showMessageDialog(this,
+                            "Withdrawal failed. Limit exceeded or insufficient balance.",
+                            "Withdrawal Error", JOptionPane.ERROR_MESSAGE);
                 }
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Invalid input. Please enter a number.");
+                JOptionPane.showMessageDialog(this,
+                        "Invalid input. Please enter a number.",
+                        "Input Error", JOptionPane.ERROR_MESSAGE);
+            } catch(IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Invalid input. Please enter a positive number",
+                        "Input Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
+        backButton.addActionListener(e -> cardLayout.show(mainPanel, "menu"));
+
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        bottomPanel.add(confirmButton);
+        bottomPanel.add(backButton);
+
         panel.add(label, BorderLayout.NORTH);
         panel.add(amountField, BorderLayout.CENTER);
-        panel.add(confirmButton, BorderLayout.SOUTH);
-        UserDataStore.saveUsers(users);
+        panel.add(bottomPanel, BorderLayout.SOUTH);
+
         return panel;
     }
     //This method creates the panel to deposit money into the checking or savings account, chosen by a drop down.
@@ -224,6 +255,7 @@ public class ATMInterface extends JFrame {
         JComboBox<String> accountSelector = new JComboBox<>(accountOptions);
 
         JButton confirmButton = new JButton("Confirm");
+        JButton backButton = new JButton("Back to Menu");
 
         confirmButton.addActionListener(e -> {
             try {
@@ -254,18 +286,31 @@ public class ATMInterface extends JFrame {
                         "Invalid input. Please enter a valid number.",
                         "Input Error", JOptionPane.ERROR_MESSAGE);
             } catch (AntiMoneyLaunderingException ex) {
-                throw new RuntimeException(ex);
+                JOptionPane.showMessageDialog(this,
+                        "Deposit Failed. Daily limit may have been exceeded",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            } catch(IllegalArgumentException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Invalid input. Please enter a positive number",
+                        "Input Error", JOptionPane.ERROR_MESSAGE);
             }
+
             UserDataStore.saveUsers(users);
         });
+
+        backButton.addActionListener(e -> cardLayout.show(mainPanel, "menu"));
 
         JPanel inputPanel = new JPanel(new GridLayout(3, 1, 10, 10));
         inputPanel.add(label);
         inputPanel.add(amountField);
         inputPanel.add(accountSelector);
 
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        bottomPanel.add(confirmButton);
+        bottomPanel.add(backButton);
+
         panel.add(inputPanel, BorderLayout.CENTER);
-        panel.add(confirmButton, BorderLayout.SOUTH);
+        panel.add(bottomPanel, BorderLayout.SOUTH);
 
         return panel;
     }

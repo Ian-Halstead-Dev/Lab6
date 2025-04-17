@@ -103,7 +103,7 @@ public class UtilityCompanyUI extends JFrame {
         setLayout(new GridLayout(4, 2));
 
         JTextField usernameOrAccField = new JTextField();
-        JTextField passwordField = new JPasswordField();
+        JTextField passwordField = new JTextField();
 
         JButton loginBtn = new JButton("Login");
         JButton backBtn = new JButton("Back");

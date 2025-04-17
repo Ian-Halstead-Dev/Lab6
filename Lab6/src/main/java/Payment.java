@@ -12,6 +12,10 @@ public class Payment {
         // Check if sufficient balance is available
         if (checking.getBalance() < amountDue) {
             System.out.println("Payment failed: Insufficient balance in checking account.");
+            JOptionPane.showMessageDialog(parent,
+                    "Payment failed: Insufficient balance in checking account.",
+                    "Payment Error",
+                    JOptionPane.ERROR_MESSAGE);
             return false;
         }
 

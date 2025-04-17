@@ -16,7 +16,7 @@ public abstract class AbstractAccount {
     public boolean deposit(int amount) throws AntiMoneyLaunderingException {
         int today = DayTracker.getCurrentDay();
         //If deposit amount is negative.
-        if(amount < 0) {
+        if(amount <= 0) {
             throw new IllegalArgumentException();
         }
         // Reset daily tracker if new day
@@ -38,6 +38,9 @@ public abstract class AbstractAccount {
     public  void transfer(AbstractAccount fromAccount, AbstractAccount toAccount, int amount) throws InsufficientFundsException {
         if(fromAccount.balance - amount < 0) {
             throw new InsufficientFundsException();
+        }
+        if(amount <= 0) {
+            throw new IllegalArgumentException();
         }
         fromAccount.balance -= amount;
         toAccount.balance += amount;
