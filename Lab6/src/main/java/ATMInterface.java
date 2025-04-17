@@ -11,6 +11,7 @@ public class ATMInterface extends JFrame {
     private Checking checking = new Checking();
     private Saving saving = new Saving();
     static Set<User> users = UserDataStore.loadUsers();
+    static { PinDataStore.loadPins(users); }
     private User loggedInUser;
     private Home home;
     //This class implements the front end UI for the ATM.
@@ -67,23 +68,25 @@ public class ATMInterface extends JFrame {
         JButton submitButton = new JButton("Submit");
 
         submitButton.addActionListener(e -> {
-            try{
             String enteredPin = new String(pinField.getPassword());
+
             Optional<User> matchedUser = users.stream()
-                    .filter(u -> u.getPin() == Integer.parseInt(enteredPin))
+                    .filter(user -> {
+                        Checking acct = user.getCheckingAcct();
+                        try {
+                            return acct != null && acct.verifyPin(Integer.parseInt(enteredPin));
+                        } catch (NumberFormatException ex) {
+                            return false;
+                        }
+                    })
                     .findFirst();
 
             if (matchedUser.isPresent()) {
-                JOptionPane.showMessageDialog(this, "Login successful! Welcome " + matchedUser.get().getUsername());
-                // optionally store the logged-in user:
                 loggedInUser = matchedUser.get();
+                JOptionPane.showMessageDialog(this, "Login successful! Welcome " + loggedInUser.getUsername());
                 cardLayout.show(mainPanel, "menu");
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid PIN. Try again.");
-            }} catch(NumberFormatException ex){
-                JOptionPane.showMessageDialog(this,
-                        "Please enter a pin number.",
-                            "Input Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 

@@ -8,6 +8,7 @@ public class UtilityCompanyUI extends JFrame {
     private Checking userCheckingAccount = new Checking();
     static Set<User> users = UserDataStore.loadUsers();
     static { PaymentDataStore.loadPaymentHistories(users); }
+    static { PinDataStore.loadPins(users); }
     private Home home;
     public UtilityCompanyUI(Home home) {
         setTitle("Utility Company Portal");
@@ -143,10 +144,12 @@ public class UtilityCompanyUI extends JFrame {
         JButton paymentHistoryBtn = new JButton("View Payment History");
         JButton nextPaymentBtn = new JButton("View Next Payment");
         JButton logoutBtn = new JButton("Logout");
+        JButton setPinButton = new JButton("Set/Update PIN");
 
         add(new JLabel("Welcome, " + loggedInUser.getUsername() + "!"));
         add(paymentHistoryBtn);
         add(nextPaymentBtn);
+        add(setPinButton);
         add(logoutBtn);
 
         paymentHistoryBtn.addActionListener(e -> {
@@ -157,7 +160,35 @@ public class UtilityCompanyUI extends JFrame {
                 JOptionPane.showMessageDialog(this, "Last Payments: " + history);
             }
         });
+        setPinButton.addActionListener(e -> {
+            Checking checking = loggedInUser.getCheckingAcct();
 
+            if (checking.hasPin()) {
+                JOptionPane.showMessageDialog(this,
+                        "PIN is already set and cannot be changed.",
+                        "PIN Locked",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            String pinText = JOptionPane.showInputDialog(this, "Enter a 4-digit PIN for your Checking account:");
+            if (pinText == null) return;
+
+            if (!pinText.matches("\\d{4}")) {
+                JOptionPane.showMessageDialog(this, "Invalid PIN. Must be exactly 4 digits.");
+                return;
+            }
+
+            int pin = Integer.parseInt(pinText);
+
+            try {
+                checking.setPin(pin);
+                PinDataStore.savePins(users);
+                JOptionPane.showMessageDialog(this, "PIN successfully set!");
+            } catch (IllegalStateException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
         nextPaymentBtn.addActionListener(e -> {
             int nextPayment = loggedInUser.getNextPayment();
             userCheckingAccount = loggedInUser.getCheckingAcct();

@@ -12,12 +12,20 @@ public class Checking extends AbstractAccount {
 
     private int withdrawToday = 0;
     private int lastWithdrawDay = -1;
-
+    private int pin = -1;
     public Checking() {
         super();
     }
 
-
+    public boolean hasPin(){ return pin != -1; }
+    public int getPin(){ return pin; }
+    public void setPin(int pin){
+        if(hasPin()){
+            throw new IllegalStateException();
+        }
+        this.pin = pin;
+    }
+    public boolean verifyPin(int inputPin){ return this.pin == inputPin; }
     public boolean withdraw(int amount) {
 
         if(amount <= 0) {

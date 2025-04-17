@@ -11,8 +11,7 @@ public class UserDataStore {
                 if(user == null) continue;
                 int checkingBalance = user.getCheckingAcct() != null ? user.getCheckingAcct().getBalance() : 0;
                 int savingBalance = user.getSavingAcct() != null ? user.getSavingAcct().getBalance() : 0;
-                writer.write(user.getPin() + "," +
-                        user.getUsername() + "," +
+                writer.write(user.getUsername() + "," +
                         user.getPassword() + "," +
                         user.getAccNum() + "," +
                         checkingBalance + "," +
@@ -30,16 +29,15 @@ public class UserDataStore {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(",");
-                if (parts.length == 6) {
+                if (parts.length == 5) {
                     User user = new User();
-                    user.setPin(Integer.parseInt(parts[0]));
-                    user.setUsername(parts[1]);
-                    user.setPassword(parts[2]);
-                    user.setAccNum(Integer.parseInt(parts[3]));
+                    user.setUsername(parts[0]);
+                    user.setPassword(parts[1]);
+                    user.setAccNum(Integer.parseInt(parts[2]));
                     Checking checking = new Checking();
-                    checking.setBalance(Integer.parseInt(parts[4]));
+                    checking.setBalance(Integer.parseInt(parts[3]));
                     Saving saving = new Saving();
-                    saving.setBalance(Integer.parseInt(parts[5]));
+                    saving.setBalance(Integer.parseInt(parts[4]));
                     user.setCheckingAcct(checking);
                     user.setSavingAcct(saving);
                     users.add(user);

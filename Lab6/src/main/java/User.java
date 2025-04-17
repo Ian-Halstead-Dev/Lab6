@@ -5,7 +5,7 @@ public class User {
     private String username;
     private String password;
     private int accNum;
-    private int pin;
+
     private ArrayDeque<Integer> paymentHistory = new ArrayDeque<>();
     private int nextPayment = -1;
     private Checking checkingAcct = new Checking();
@@ -21,8 +21,7 @@ public class User {
     public void setPassword(String password) { this.password = password; }
     public int getAccNum() { return accNum; }
     public void setAccNum(int accNum) { this.accNum = accNum; }
-    public int getPin() { return pin; }
-    public void setPin(int pin) { this.pin = pin; }
+
     public ArrayDeque<Integer> getPaymentHistoy() { return paymentHistory; }
     public void setPaymentHistory(ArrayDeque<Integer> paymentHistoy) { this.paymentHistory = paymentHistoy; }
     public int getNextPayment() {

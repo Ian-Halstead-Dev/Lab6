@@ -6,7 +6,7 @@ public abstract class AbstractAccount {
     private int currentDeposit;
     //This class is used to implement account methods that will be used in checking and saving.
     public AbstractAccount () {
-        balance = 1000;
+        balance = 0;
     }
 
     public void reset() {

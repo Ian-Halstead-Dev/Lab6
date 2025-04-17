@@ -1,2 +1,4 @@
-2,a,wrong,1,0,0
-0,validUser,correct,123456,99,5100
+ian,password,503361,1500,1000
+obama,jason,121093,0,0
+josh,123,916368,1500,1000
+jason,obama,413728,1000,1000
