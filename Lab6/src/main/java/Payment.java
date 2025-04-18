@@ -8,14 +8,6 @@ public class Payment {
     public static boolean payUtilityBill(User user, Checking checking, Component parent) {
         int amountDue = user.getNextPayment();
 
-        if (amountDue <= 0) {
-            JOptionPane.showMessageDialog(parent,
-                    "No payment due at this time.",
-                    "Payment Info",
-                    JOptionPane.INFORMATION_MESSAGE);
-            return false;
-        }
-
         if (checking.getBalance() < amountDue) {
             JOptionPane.showMessageDialog(parent,
                     "Payment failed: Insufficient balance in checking account.",

@@ -1,21 +1,24 @@
 import javax.swing.*;
 import java.awt.*;
 import java.util.*;
-//This class implements the UI for the utility company for the user to see their payment history and what
-//payment they have to make.
+
 public class UtilityCompanyUI extends JFrame {
     private User loggedInUser = null;
-
     static Set<User> users = UserDataStore.loadUsers();
-    static { PaymentDataStore.loadPaymentHistories(users); }
-    static { PinDataStore.loadPins(users); }
-    private Home home;
+
+    static {
+        PaymentDataStore.loadPaymentHistories(users);
+        PinDataStore.loadPins(users);
+    }
+
+    private final Home home;
+
     public UtilityCompanyUI(Home home) {
+        this.home = home;
         setTitle("Utility Company Portal");
         setSize(400, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        this.home = home;
         showWelcomeScreen();
     }
 
@@ -23,11 +26,9 @@ public class UtilityCompanyUI extends JFrame {
         getContentPane().removeAll();
         setLayout(new BorderLayout());
 
-        // Top label
         JLabel titleLabel = new JLabel("Welcome to the Utility Company", SwingConstants.CENTER);
         add(titleLabel, BorderLayout.NORTH);
 
-        // Center buttons (Create & Login)
         JPanel centerPanel = new JPanel(new GridLayout(2, 1, 10, 10));
         JButton createAccountBtn = new JButton("Create Account");
         JButton loginBtn = new JButton("Login");
@@ -39,10 +40,9 @@ public class UtilityCompanyUI extends JFrame {
         centerPanel.add(loginBtn);
         add(centerPanel, BorderLayout.CENTER);
 
-        // Bottom "Back to Home" button
         JButton homeButton = new JButton("Back to Home");
         homeButton.addActionListener(e -> {
-            this.dispose();  // Close Utility window
+            this.dispose();
             home.setVisible(true);
         });
         add(homeButton, BorderLayout.SOUTH);
@@ -57,7 +57,6 @@ public class UtilityCompanyUI extends JFrame {
 
         JTextField usernameField = new JTextField();
         JTextField passwordField = new JPasswordField();
-
         JButton createBtn = new JButton("Create");
         JButton backBtn = new JButton("Back");
 
@@ -69,32 +68,34 @@ public class UtilityCompanyUI extends JFrame {
         add(backBtn);
 
         createBtn.addActionListener(e -> {
-            User user = new User();
-            String uname = usernameField.getText();
-            String pass = passwordField.getText();
-            Random rand = new Random();
+            String uname = usernameField.getText().trim();
+            String pass = passwordField.getText().trim();
 
-            boolean exists = users.stream()
-                    .anyMatch(u -> u.getUsername().equals(uname));
+            if (uname.isEmpty() || pass.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Username and Password cannot be empty.");
+                return;
+            }
+
+            boolean exists = users.stream().anyMatch(u -> u.getUsername().equals(uname));
             if (exists) {
                 JOptionPane.showMessageDialog(this, "Username already exists. Try another.");
                 return;
             }
 
+            User user = new User();
             user.setUsername(uname);
             user.setPassword(pass);
-            user.setAccNum(100000 + rand.nextInt(900000));
-            users.add(user);
-            UserDataStore.saveUsers(users);
-            PaymentDataStore.savePaymentHistories(users);
+            user.setAccNum(100000 + new Random().nextInt(900000));
+            user.setNextPayment(50 + new Random().nextInt(100)); // Initial bill
 
+            users.add(user);
+            saveAll();
 
             JOptionPane.showMessageDialog(this, "Account created! Your account number: " + user.getAccNum());
             showWelcomeScreen();
         });
 
         backBtn.addActionListener(e -> showWelcomeScreen());
-
         revalidate();
         repaint();
     }
@@ -105,7 +106,6 @@ public class UtilityCompanyUI extends JFrame {
 
         JTextField usernameOrAccField = new JTextField();
         JTextField passwordField = new JTextField();
-
         JButton loginBtn = new JButton("Login");
         JButton backBtn = new JButton("Back");
 
@@ -144,6 +144,10 @@ public class UtilityCompanyUI extends JFrame {
                 }
 
                 JOptionPane.showMessageDialog(this, "Login successful! Welcome, " + loggedInUser.getUsername());
+
+
+                home.setLoggedInUser(loggedInUser);
+
                 showAccountScreen();
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid credentials. Try again.");
@@ -151,7 +155,6 @@ public class UtilityCompanyUI extends JFrame {
         });
 
         backBtn.addActionListener(e -> showWelcomeScreen());
-
         revalidate();
         repaint();
     }
@@ -162,18 +165,14 @@ public class UtilityCompanyUI extends JFrame {
 
         JButton paymentHistoryBtn = new JButton("View Payment History");
         JButton nextPaymentBtn = new JButton("View Next Payment");
-        JButton logoutBtn = new JButton("Logout");
         JButton setPinButton = new JButton("Set/Update PIN");
+        JButton logoutBtn = new JButton("Logout");
 
         add(new JLabel("Welcome, " + loggedInUser.getUsername() + "!"));
         add(paymentHistoryBtn);
         add(nextPaymentBtn);
         add(setPinButton);
         add(logoutBtn);
-
-//        users = UserDataStore.loadUsers();
-//        PaymentDataStore.loadPaymentHistories(users);
-//        PinDataStore.loadPins(users);
 
         paymentHistoryBtn.addActionListener(e -> {
             ArrayDeque<Integer> history = loggedInUser.getPaymentHistoy();
@@ -183,50 +182,58 @@ public class UtilityCompanyUI extends JFrame {
                 JOptionPane.showMessageDialog(this, "Last Payments: " + history);
             }
         });
+
         setPinButton.addActionListener(e -> {
             Checking checking = loggedInUser.getCheckingAcct();
 
             if (checking.hasPin()) {
-                JOptionPane.showMessageDialog(this,
-                        "PIN is already set and cannot be changed.",
-                        "PIN Locked",
-                        JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "PIN is already set and cannot be changed.",
+                        "PIN Locked", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             String pinText = JOptionPane.showInputDialog(this, "Enter a 4-digit PIN for your Checking account:");
-            if (pinText == null) return;
-
-            if (!pinText.matches("\\d{4}")) {
+            if (pinText == null || !pinText.matches("\\d{4}")) {
                 JOptionPane.showMessageDialog(this, "Invalid PIN. Must be exactly 4 digits.");
                 return;
             }
 
-            int pin = Integer.parseInt(pinText);
-
             try {
-                checking.setPin(pin);
+                checking.setPin(Integer.parseInt(pinText));
                 PinDataStore.savePins(users);
+                UserDataStore.saveUsers(users);
                 JOptionPane.showMessageDialog(this, "PIN successfully set!");
             } catch (IllegalStateException ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
+
         nextPaymentBtn.addActionListener(e -> {
             int nextPayment = loggedInUser.getNextPayment();
-            Checking userCheckingAccount = loggedInUser.getCheckingAcct();
-            int confirm = JOptionPane.showConfirmDialog(this, "Next Payment: $" + nextPayment + "\n\nDo you want to pay this now?", "Pay Bill", JOptionPane.YES_NO_OPTION);
-            if (confirm == JOptionPane.YES_OPTION) {
-                Payment.payUtilityBill(loggedInUser, userCheckingAccount, this);
-                UserDataStore.saveUsers(users);
-                PaymentDataStore.savePaymentHistories(UtilityCompanyUI.users);
+            if (nextPayment <= 0) {
+                JOptionPane.showMessageDialog(this, "No payment due right now.");
+                return;
             }
 
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Next Payment: $" + nextPayment + "\n\nDo you want to pay this now?",
+                    "Pay Bill", JOptionPane.YES_NO_OPTION);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                boolean paid = Payment.payUtilityBill(loggedInUser, loggedInUser.getCheckingAcct(), this);
+
+                if (paid) {
+                    // Optional: generate next bill here instead of setting -1
+                    // loggedInUser.setNextPayment(50 + new Random().nextInt(100));
+
+                    saveAll();
+                    JOptionPane.showMessageDialog(this, "Payment successful. Thank you!");
+                }
+            }
         });
 
         logoutBtn.addActionListener(e -> {
-            UserDataStore.saveUsers(users);
-            PaymentDataStore.savePaymentHistories(users);
+            saveAll();
             loggedInUser = null;
             showWelcomeScreen();
         });
@@ -235,10 +242,22 @@ public class UtilityCompanyUI extends JFrame {
         repaint();
     }
 
+    private void saveAll() {
+        UserDataStore.saveUsers(users);
+        PaymentDataStore.savePaymentHistories(users);
+        PinDataStore.savePins(users);
+    }
+
+    private void reloadData() {
+        users = UserDataStore.loadUsers();
+        PaymentDataStore.loadPaymentHistories(users);
+        PinDataStore.loadPins(users);
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            Home home = new Home(); // create the home screen
-            UtilityCompanyUI utilityUI = new UtilityCompanyUI(home); // pass it to Utility
+            Home home = new Home();
+            UtilityCompanyUI utilityUI = new UtilityCompanyUI(home);
             utilityUI.setVisible(true);
         });
     }

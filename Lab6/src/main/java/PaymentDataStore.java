@@ -56,7 +56,6 @@ public class PaymentDataStore {
                 try {
                     int accNum = Integer.parseInt(parts[0]);
                     int nextPayment = Integer.parseInt(parts[1]);
-
                     ArrayDeque<Integer> history = new ArrayDeque<>();
                     if (!parts[2].isEmpty()) {
                         String[] amounts = parts[2].split(",");
@@ -80,11 +79,16 @@ public class PaymentDataStore {
 
         for (User user : users) {
             int accNum = user.getAccNum();
-            if (nextPaymentMap.containsKey(accNum)) {
-                user.setNextPayment(nextPaymentMap.get(accNum));
+
+            ArrayDeque<Integer> history = historyMap.get(accNum);
+            Integer next = nextPaymentMap.get(accNum);
+
+            if (history != null) {
+                user.setPaymentHistory(history);
             }
-            if (historyMap.containsKey(accNum)) {
-                user.setPaymentHistory(historyMap.get(accNum));
+
+            if (next != null) {
+                user.setNextPayment(next);
             }
         }
     }

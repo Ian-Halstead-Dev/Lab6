@@ -22,7 +22,6 @@ public class BankingAppTests {
         user.setSavingAcct(saving);
         user.setUsername("ian");
         user.setPassword("pass");
-        user.setPin(1234);
         user.setAccNum(42);
     }
 
@@ -144,7 +143,6 @@ public class BankingAppTests {
         User u = new User();
         u.setUsername("john");
         u.setPassword("123");
-        u.setPin(1111);
         u.setAccNum(42);
         users.add(u);
 

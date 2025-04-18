@@ -3,6 +3,7 @@ import java.awt.*;
 
 public class Home extends JFrame {
     //This class is just a UI to have the UtilityCompany or ATM UI displayed.
+    private User loggedInUser;
     public Home() {
         setTitle("Banking & Utility Hub");
         setSize(400, 200);
@@ -16,10 +17,15 @@ public class Home extends JFrame {
         JButton nextDayButton = new JButton("Simulate Next Day");
 
         atmButton.addActionListener(e -> {
+            if (loggedInUser == null) {
+                JOptionPane.showMessageDialog(this, "Please log in through the Utility Company first.");
+                return;
+            }
+
             this.setVisible(false); // Hide Home window
             SwingUtilities.invokeLater(() -> {
-                ATMInterface atmUI = new ATMInterface(this);
-                atmUI.setVisible(true);
+                ATMInterface atm = new ATMInterface(this, loggedInUser);
+                atm.setVisible(true);
             });
         });
 
@@ -40,7 +46,9 @@ public class Home extends JFrame {
         add(utilityButton);
         add(nextDayButton);
     }
-
+    public void setLoggedInUser(User user){
+        this.loggedInUser = user;
+    }
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             Home home = new Home();

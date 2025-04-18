@@ -1,57 +1,49 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Optional;
 import java.util.Set;
 
 public class ATMInterface extends JFrame {
     private CardLayout cardLayout;
     private JPanel mainPanel;
-    private Checking checking = new Checking();
-    private Saving saving = new Saving();
-    static Set<User> users = UserDataStore.loadUsers();
-    static { PinDataStore.loadPins(users); }
-    private User loggedInUser;
-    private Home home;
-    //This class implements the front end UI for the ATM.
-    public ATMInterface(Home home) {
-        // Frame settings
+    private Checking checking;
+    private Saving saving;
+    private final User loggedInUser;
+    private final Home home;
+
+    // ✅ Constructor now accepts loggedInUser directly
+    public ATMInterface(Home home, User loggedInUser) {
         this.home = home;
+        this.loggedInUser = loggedInUser;
+        this.checking = loggedInUser.getCheckingAcct();
+        this.saving = loggedInUser.getSavingAcct();
+
         setTitle("ATM System");
         setSize(400, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Layout
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
 
-        // Add screens
         mainPanel.add(createWelcomePanel(), "welcome");
         mainPanel.add(createPinPanel(), "pin");
         mainPanel.add(createMenuPanel(), "menu");
         mainPanel.add(createWithdrawPanel(), "withdraw");
         mainPanel.add(createDepositPanel(), "deposit");
 
-
         add(mainPanel);
-        cardLayout.show(mainPanel, "welcome"); // start screen
+        cardLayout.show(mainPanel, "welcome");
     }
 
-
     private JPanel createWelcomePanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(null);
+        JPanel panel = new JPanel(null);
 
         JLabel label = new JLabel("Welcome to the ATM", SwingConstants.CENTER);
         JButton nextButton = new JButton("Insert Card (Next)");
 
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        label.setVerticalAlignment(SwingConstants.TOP);
-
         nextButton.addActionListener(e -> cardLayout.show(mainPanel, "pin"));
-        // nextButton.setPreferredSize(new Dimension(100,50));
         nextButton.setBounds(100, 200, 200, 40);
 
         panel.add(label);
@@ -60,8 +52,6 @@ public class ATMInterface extends JFrame {
         return panel;
     }
 
-    //This panel allows the user to add their checking account pin to the utility account so that
-    //they can pay bills.
     private JPanel createPinPanel() {
         JPanel panel = new JPanel(new BorderLayout());
 
@@ -70,25 +60,16 @@ public class ATMInterface extends JFrame {
         JButton submitButton = new JButton("Submit");
 
         submitButton.addActionListener(e -> {
-            String enteredPin = new String(pinField.getPassword());
-
-            Optional<User> matchedUser = users.stream()
-                    .filter(user -> {
-                        Checking acct = user.getCheckingAcct();
-                        try {
-                            return acct != null && acct.verifyPin(Integer.parseInt(enteredPin));
-                        } catch (NumberFormatException ex) {
-                            return false;
-                        }
-                    })
-                    .findFirst();
-
-            if (matchedUser.isPresent()) {
-                loggedInUser = matchedUser.get();
-                JOptionPane.showMessageDialog(this, "Login successful! Welcome " + loggedInUser.getUsername());
-                cardLayout.show(mainPanel, "menu");
-            } else {
-                JOptionPane.showMessageDialog(this, "Invalid PIN. Try again.");
+            try {
+                int enteredPin = Integer.parseInt(new String(pinField.getPassword()));
+                if (checking.verifyPin(enteredPin)) {
+                    JOptionPane.showMessageDialog(this, "Login successful! Welcome " + loggedInUser.getUsername());
+                    cardLayout.show(mainPanel, "menu");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Invalid PIN. Try again.");
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Invalid PIN format.");
             }
         });
 
@@ -100,117 +81,41 @@ public class ATMInterface extends JFrame {
     }
 
     private JPanel createMenuPanel() {
-        JPanel panel = new JPanel(new GridLayout(4, 1, 10, 10));
+        JPanel panel = new JPanel(new GridLayout(5, 1, 10, 10));
 
         JButton withdrawButton = new JButton("Withdraw");
         JButton depositButton = new JButton("Deposit");
         JButton balanceButton = new JButton("Check Balance");
-        JButton exitButton = new JButton("Exit");
+        JButton transferButton = new JButton("Transfer Funds");
         JButton homeButton = new JButton("Back to Home");
-        homeButton.addActionListener(e -> {
-            UserDataStore.saveUsers(users);
-            this.dispose();  // Close ATM window
-            home.setVisible(true);  // Show Home window again
-        });
 
-        users = UserDataStore.loadUsers();
-        PinDataStore.loadPins(users);
-        panel.add(homeButton);
         withdrawButton.addActionListener(e -> cardLayout.show(mainPanel, "withdraw"));
         depositButton.addActionListener(e -> cardLayout.show(mainPanel, "deposit"));
         balanceButton.addActionListener(e -> {
-            mainPanel.add(createBalancePanel(), "balance"); // create it fresh with latest balances
+            mainPanel.add(createBalancePanel(), "balance");
             cardLayout.show(mainPanel, "balance");
         });
-        exitButton.addActionListener(e -> System.exit(0));
-
-        panel.add(withdrawButton);
-        panel.add(depositButton);
-        panel.add(balanceButton);
-        JButton transferButton = new JButton("Transfer Funds");
         transferButton.addActionListener(e -> {
             mainPanel.add(createTransferPanel(), "transfer");
             cardLayout.show(mainPanel, "transfer");
         });
-
-        panel.add(transferButton); // Add this before balanceButton or wherever you want it
-        panel.add(exitButton);
-
-        return panel;
-    }
-
-    //This is the panel to make a transfer between checking and savings accounts.
-    private JPanel createTransferPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-
-        JLabel label = new JLabel("Transfer Amount:", SwingConstants.CENTER);
-        JTextField amountField = new JTextField();
-
-        String[] accountOptions = {"Checking to Saving", "Saving to Checking"};
-        JComboBox<String> directionSelector = new JComboBox<>(accountOptions);
-
-        JButton confirmButton = new JButton("Confirm");
-        JButton backButton = new JButton("Back to Menu");
-
-        confirmButton.addActionListener(e -> {
-            try {
-                int amount = Integer.parseInt(amountField.getText());
-                String direction = (String) directionSelector.getSelectedItem();
-                checking = loggedInUser.getCheckingAcct();
-                saving = loggedInUser.getSavingAcct();
-
-                if ("Checking to Saving".equals(direction)) {
-                    checking.transfer(checking, saving, amount);
-                    JOptionPane.showMessageDialog(this, "Transfer successful!\n" +
-                            "Checking: $" + checking.getBalance() +
-                            "\nSaving: $" + saving.getBalance());
-                } else if ("Saving to Checking".equals(direction)) {
-                    saving.transfer(checking, amount); // calls Saving.transfer override
-                    JOptionPane.showMessageDialog(this, "Transfer successful!\n" +
-                            "Saving: $" + saving.getBalance() +
-                            "\nChecking: $" + checking.getBalance());
-                }
-
-                UserDataStore.saveUsers(users);
-                cardLayout.show(mainPanel, "menu");
-
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Invalid amount. Please enter a number.",
-                        "Input Error", JOptionPane.ERROR_MESSAGE);
-            } catch (InsufficientFundsException ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Transfer failed: Insufficient funds.",
-                        "Payment Error", JOptionPane.ERROR_MESSAGE);
-            } catch (AntiMoneyLaunderingException ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Transfer exceeds daily limit.",
-                        "Limit Error", JOptionPane.ERROR_MESSAGE);
-            } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Invalid Input. Please enter a positive number.",
-                        "Input Error", JOptionPane.ERROR_MESSAGE);
-            }
+        homeButton.addActionListener(e -> {
+            // Save before going back
+            UserDataStore.saveUsers(Set.of(loggedInUser));
+            PaymentDataStore.savePaymentHistories(Set.of(loggedInUser));
+            this.dispose();
+            home.setVisible(true);
         });
 
-        backButton.addActionListener(e -> cardLayout.show(mainPanel, "menu"));
-
-        JPanel inputPanel = new JPanel(new GridLayout(3, 1, 10, 10));
-        inputPanel.add(label);
-        inputPanel.add(amountField);
-        inputPanel.add(directionSelector);
-
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
-        bottomPanel.add(confirmButton);
-        bottomPanel.add(backButton);
-
-        panel.add(inputPanel, BorderLayout.CENTER);
-        panel.add(bottomPanel, BorderLayout.SOUTH);
-        UserDataStore.saveUsers(users);
+        panel.add(withdrawButton);
+        panel.add(depositButton);
+        panel.add(balanceButton);
+        panel.add(transferButton);
+        panel.add(homeButton);
 
         return panel;
     }
-    //This method creates the panel to withdraw money from the checking account.
+
     private JPanel createWithdrawPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 
@@ -222,48 +127,40 @@ public class ATMInterface extends JFrame {
         confirmButton.addActionListener(e -> {
             try {
                 int amount = Integer.parseInt(amountField.getText());
-                boolean success = loggedInUser.getCheckingAcct().withdraw(amount);
+                boolean success = checking.withdraw(amount);
                 if (success) {
-                    UserDataStore.saveUsers(users);
-                    JOptionPane.showMessageDialog(this, "Withdrawal successful! New balance: $" + loggedInUser.getCheckingAcct().getBalance());
+                    UserDataStore.saveUsers(Set.of(loggedInUser));
+                    JOptionPane.showMessageDialog(this, "Withdrawal successful! New balance: $" + checking.getBalance());
                     cardLayout.show(mainPanel, "menu");
                 } else {
-                    JOptionPane.showMessageDialog(this,
-                            "Withdrawal failed. Limit exceeded or insufficient balance.",
-                            "Withdrawal Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Insufficient funds or withdrawal limit exceeded.");
                 }
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Invalid input. Please enter a number.",
-                        "Input Error", JOptionPane.ERROR_MESSAGE);
-            } catch(IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Invalid input. Please enter a positive number",
-                        "Input Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Invalid input.");
             }
         });
 
         backButton.addActionListener(e -> cardLayout.show(mainPanel, "menu"));
 
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
-        bottomPanel.add(confirmButton);
-        bottomPanel.add(backButton);
+        JPanel bottom = new JPanel();
+        bottom.add(confirmButton);
+        bottom.add(backButton);
 
         panel.add(label, BorderLayout.NORTH);
         panel.add(amountField, BorderLayout.CENTER);
-        panel.add(bottomPanel, BorderLayout.SOUTH);
+        panel.add(bottom, BorderLayout.SOUTH);
 
         return panel;
     }
-    //This method creates the panel to deposit money into the checking or savings account, chosen by a drop down.
+
     private JPanel createDepositPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 
         JLabel label = new JLabel("Enter amount to deposit:", SwingConstants.CENTER);
         JTextField amountField = new JTextField();
 
-        String[] accountOptions = {"Checking", "Saving"};
-        JComboBox<String> accountSelector = new JComboBox<>(accountOptions);
+        String[] options = {"Checking", "Saving"};
+        JComboBox<String> accountSelector = new JComboBox<>(options);
 
         JButton confirmButton = new JButton("Confirm");
         JButton backButton = new JButton("Back to Menu");
@@ -271,53 +168,35 @@ public class ATMInterface extends JFrame {
         confirmButton.addActionListener(e -> {
             try {
                 int amount = Integer.parseInt(amountField.getText());
-                String selected = (String) accountSelector.getSelectedItem();
-                checking = loggedInUser.getCheckingAcct();
-                saving = loggedInUser.getSavingAcct();
                 boolean success = false;
-
-                if ("Checking".equals(selected)) {
+                if ("Checking".equals(accountSelector.getSelectedItem())) {
                     success = checking.deposit(amount);
-                } else if ("Saving".equals(selected)) {
+                } else if ("Saving".equals(accountSelector.getSelectedItem())) {
                     success = saving.deposit(amount);
                 }
 
                 if (success) {
-                    UserDataStore.saveUsers(users);
+                    UserDataStore.saveUsers(Set.of(loggedInUser));
                     JOptionPane.showMessageDialog(this,
                             "Deposit successful!\nChecking: $" + checking.getBalance() +
                                     "\nSaving: $" + saving.getBalance());
                     cardLayout.show(mainPanel, "menu");
                 } else {
-                    JOptionPane.showMessageDialog(this,
-                            "Deposit failed. Daily limit may have been exceeded.",
-                            "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Deposit failed. Daily limit may have been exceeded.");
                 }
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Invalid input. Please enter a valid number.",
-                        "Input Error", JOptionPane.ERROR_MESSAGE);
-            } catch (AntiMoneyLaunderingException ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Deposit Failed. Daily limit may have been exceeded",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-            } catch(IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Invalid input. Please enter a positive number",
-                        "Input Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Invalid input.");
             }
-
-
         });
 
         backButton.addActionListener(e -> cardLayout.show(mainPanel, "menu"));
 
-        JPanel inputPanel = new JPanel(new GridLayout(3, 1, 10, 10));
+        JPanel inputPanel = new JPanel(new GridLayout(3, 1));
         inputPanel.add(label);
         inputPanel.add(amountField);
         inputPanel.add(accountSelector);
 
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
+        JPanel bottomPanel = new JPanel();
         bottomPanel.add(confirmButton);
         bottomPanel.add(backButton);
 
@@ -326,35 +205,76 @@ public class ATMInterface extends JFrame {
 
         return panel;
     }
-    //This method creates the panel for the user to check the balance of their accounts.
-    private JPanel createBalancePanel() {
+
+    private JPanel createTransferPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
 
-        checking = loggedInUser.getCheckingAcct();
-        saving = loggedInUser.getSavingAcct();
-        // Create balance labels
-        JLabel checkingLabel = new JLabel("Checking Account Balance: $" + checking.getBalance(), SwingConstants.CENTER);
-        JLabel savingLabel = new JLabel("Saving Account Balance: $" + saving.getBalance(), SwingConstants.CENTER);
+        JLabel label = new JLabel("Transfer Amount:", SwingConstants.CENTER);
+        JTextField amountField = new JTextField();
 
-        // Back button
+        String[] directions = {"Checking to Saving", "Saving to Checking"};
+        JComboBox<String> directionSelector = new JComboBox<>(directions);
+
+        JButton confirmButton = new JButton("Confirm");
         JButton backButton = new JButton("Back to Menu");
+
+        confirmButton.addActionListener(e -> {
+            try {
+                int amount = Integer.parseInt(amountField.getText());
+                if ("Checking to Saving".equals(directionSelector.getSelectedItem())) {
+                    checking.transfer(checking, saving, amount);
+                } else {
+                    saving.transfer(checking, amount);
+                }
+
+                UserDataStore.saveUsers(Set.of(loggedInUser));
+                JOptionPane.showMessageDialog(this, "Transfer successful!");
+                cardLayout.show(mainPanel, "menu");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Transfer failed: " + ex.getMessage());
+            }
+        });
+
         backButton.addActionListener(e -> cardLayout.show(mainPanel, "menu"));
 
-        // Stack both labels in a sub-panel
-        JPanel balanceInfoPanel = new JPanel(new GridLayout(2, 1, 10, 10));
-        balanceInfoPanel.add(checkingLabel);
-        balanceInfoPanel.add(savingLabel);
+        JPanel inputPanel = new JPanel(new GridLayout(3, 1));
+        inputPanel.add(label);
+        inputPanel.add(amountField);
+        inputPanel.add(directionSelector);
 
-        panel.add(balanceInfoPanel, BorderLayout.CENTER);
-        panel.add(backButton, BorderLayout.SOUTH);
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.add(confirmButton);
+        bottomPanel.add(backButton);
+
+        panel.add(inputPanel, BorderLayout.CENTER);
+        panel.add(bottomPanel, BorderLayout.SOUTH);
+
         return panel;
     }
 
+    private JPanel createBalancePanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+
+        JLabel checkingLabel = new JLabel("Checking: $" + checking.getBalance(), SwingConstants.CENTER);
+        JLabel savingLabel = new JLabel("Saving: $" + saving.getBalance(), SwingConstants.CENTER);
+
+        JButton backButton = new JButton("Back to Menu");
+        backButton.addActionListener(e -> cardLayout.show(mainPanel, "menu"));
+
+        JPanel center = new JPanel(new GridLayout(2, 1));
+        center.add(checkingLabel);
+        center.add(savingLabel);
+
+        panel.add(center, BorderLayout.CENTER);
+        panel.add(backButton, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    // Don't use this — use UtilityCompanyUI to launch with a real User
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            Home home = new Home(); // create home screen
-            ATMInterface atm = new ATMInterface(home); // pass it to ATM
-            atm.setVisible(true);
+            System.out.println("Use UtilityCompanyUI to start the app.");
         });
     }
 }
